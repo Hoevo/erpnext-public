@@ -1,3 +1,4 @@
+from contract_ops.tests.helpers import make_contract
 """Document permissions, reassignment and disabled recipients on the isolated site."""
 import frappe
 from contract_ops import renewal
@@ -11,9 +12,11 @@ def run():
         enabled=1, send_welcome_email=0, user_type='System User', roles=[dict(role='Sales Manager')])).insert()
     allowed = 'Contract Ops Test Company'
     denied = frappe.get_all('Company', filters={'name':['!=',allowed]}, pluck='name')[0]
+    group = frappe.get_doc(dict(doctype='Contract Group', group_name='TEST Cross-company '+token)).insert()
     frappe.get_doc(dict(doctype='User Permission', user=user.name, allow='Company', for_value=allowed, apply_to_all_doctypes=1)).insert()
     def make(company, owner='Administrator'):
-        c = frappe.get_doc(dict(doctype='Sales Contract', contract_title='TEST Renewal Permissions '+token,
+        c = make_contract(dict(doctype='Contract', contract_title='TEST Renewal Permissions '+token,
+            contract_group=group.name,
             company=company, customer='Contract Ops Test Customer', currency='CNY', contract_amount=100,
             start_date='2025-01-01', end_date='2026-11-30', renewal_enabled=1, renewal_mode='到期协商续签',
             renewal_owner=owner, renewal_leads='30,7,1,0', renewal_notice_days=0, renewal_clause='ISOLATED TEST: expiry negotiation')).insert()
@@ -26,8 +29,16 @@ def run():
     assert old and frappe.db.get_value('ToDo',old,'allocated_to') == user.name
     frappe.set_user(user.name)
     try:
-        assert frappe.has_permission('Sales Contract','read',doc=frappe.get_doc('Sales Contract',a.name))
-        assert not frappe.has_permission('Sales Contract','read',doc=frappe.get_doc('Sales Contract',b.name))
+        assert frappe.has_permission('Contract','read',doc=frappe.get_doc('Contract',a.name))
+        assert not frappe.has_permission('Contract','read',doc=frappe.get_doc('Contract',b.name))
+        assert frappe.has_permission('Contract Group', 'read', doc=group)
+        from contract_ops.api import get_contract_group_summary
+        try:
+            get_contract_group_summary(group.name)
+        except frappe.PermissionError:
+            pass
+        else:
+            raise AssertionError('cross-company contract group amount leak')
         assert frappe.has_permission(renewal.CYCLE,'read',doc=frappe.get_doc(renewal.CYCLE,ca))
         assert not frappe.has_permission(renewal.CYCLE,'read',doc=frappe.get_doc(renewal.CYCLE,cb))
         rows = frappe.get_list(renewal.CYCLE, fields=['name','company'], limit_page_length=10000)
@@ -57,4 +68,4 @@ def run():
     a.reload(); a.renewal_enabled=0; a.save()
     b.reload(); b.renewal_enabled=0; b.save()
     frappe.db.commit()
-    return dict(passed=12, company_permissions=True, runtime_disabled_owner=True, reassignment=True)
+    return dict(passed=14, company_permissions=True, group_summary_permissions=True, runtime_disabled_owner=True, reassignment=True)

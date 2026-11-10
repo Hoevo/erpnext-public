@@ -70,7 +70,7 @@ def validate_invoice_shares(vat):
             frappe.throw('合并应收必须已提交，且开票公司、客户和币种一致')
         contract_name=invoice.get('custom_sales_contract')
         if not contract_name:frappe.throw('应收发票未关联销售合同，不能确认合并归属')
-        contract=frappe.get_doc('Sales Contract',contract_name);contract.check_permission('read')
+        contract=frappe.get_doc('Contract',contract_name);contract.check_permission('read')
         new_submission=vat.is_new() or vat.docstatus==0 or (vat.docstatus==1 and frappe.db.get_value(vat.doctype,vat.name,'docstatus')!=1)
         if new_submission and not vat.get('plan_allocations') and (contract.get('billing_flow')=='先款后票' or frappe.db.exists('Contract Billing Plan',{'sales_contract':contract.name,'disabled':0})):
             frappe.throw('对应合同已有票款计划，请填写期次分配，不能只关联应收绕过计划及付款校验')
@@ -169,7 +169,7 @@ def sync_payment_sources(vat):
 
 @frappe.whitelist()
 def get_merge_candidates(company,customer,currency='CNY'):
-    contracts=frappe.get_list('Sales Contract',filters={'docstatus':1,'company':company,'customer':customer,'currency':currency},
+    contracts=frappe.get_list('Contract',filters={'docstatus':1,'company':company,'party_name':customer,'party_type':'Customer','contract_ops_enabled':1,'currency':currency},
         fields=['name','external_number','contract_title','contract_group'],limit_page_length=0)
     owners={r.name:r for r in contracts}
     if not owners:return []
@@ -199,7 +199,7 @@ def prepare_merged_vat(company,customer,currency,allocations,invoice_date=None):
     contracts={}
     for row in rows:
         plan=frappe.get_doc('Contract Billing Plan',row.get('billing_plan'));plan.check_permission('read')
-        contract=frappe.get_doc('Sales Contract',plan.sales_contract);contract.check_permission('read');contracts[contract.name]=contract
+        contract=frappe.get_doc('Contract',plan.sales_contract);contract.check_permission('read');contracts[contract.name]=contract
     parents=list(contracts.values());groups={c.contract_group for c in parents}
     vat=frappe.get_doc(dict(doctype='VAT Invoice Record',company=company,customer=customer,currency=currency,
         invoice_date=invoice_date or nowdate(),gross_amount=sum((money(r.get('allocated_amount')) for r in rows),money(0)),
@@ -229,7 +229,7 @@ def get_vat_relationships(vat_invoice):
         if not amounts and vat.sales_contract:amounts[vat.sales_contract]=money(vat.gross_amount)
     contracts=[]
     for name,amount in amounts.items():
-        contract=frappe.get_doc('Sales Contract',name);contract.check_permission('read')
+        contract=frappe.get_doc('Contract',name);contract.check_permission('read')
         contracts.append(dict(name=name,title=contract.contract_title,external_number=contract.external_number,allocated_amount=amount))
     funded=[]
     for row in vat.get('payment_allocations') or []:

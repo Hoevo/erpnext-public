@@ -46,15 +46,15 @@ async function render_summary(frm) {
       <p class="text-muted">金额按不同口径分别展示，不能相加。点击金额或单据名称可追溯。</p>
       <div class="contract-group-metrics">${cards}</div>
       ${table("contracts", "协议清单", ["销售合同", "协议号", "期限", "两年推算金额"], rows(data.contracts, [
-          (x) => link("Sales Contract", x.name, x.name), (x) => escape_html(x.external_number),
+          (x) => link("Contract", x.name, x.name), (x) => escape_html(x.external_number),
           (x) => `${escape_html(x.start_date)} 至 ${escape_html(x.end_date)}`, (x) => money(x.contract_amount),
       ]))}
       ${table("vat-invoices", "税票登记", ["税票", "销售合同", "本组分配金额"], rows(data.vat_invoices, [
           (x) => link("VAT Invoice Record", x.name, x.invoice_number || x.name),
-          (x) => x.sales_contract ? link("Sales Contract", x.sales_contract) : "多合同合并（点击税票查看）", (x) => money(x.gross_amount),
+          (x) => x.sales_contract ? link("Contract", x.sales_contract) : "多合同合并（点击税票查看）", (x) => money(x.gross_amount),
       ]))}
       ${table("receivables", "应收发票", ["应收发票", "销售合同", "计费期间", "金额", "未收"], rows(data.receivables, [
-          (x) => link("Sales Invoice", x.name), (x) => link("Sales Contract", x.custom_sales_contract),
+          (x) => link("Sales Invoice", x.name), (x) => link("Contract", x.custom_sales_contract),
           (x) => `${escape_html(x.custom_billing_period_start || "未填")} 至 ${escape_html(x.custom_billing_period_end || "未填")}`,
           (x) => money(x.grand_total), (x) => money(x.outstanding_amount),
       ]))}

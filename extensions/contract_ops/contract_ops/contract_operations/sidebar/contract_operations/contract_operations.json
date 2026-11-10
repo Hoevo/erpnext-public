@@ -18,8 +18,9 @@
       "type": "Link",
       "label": "销售合同",
       "link_type": "DocType",
-      "link_to": "Sales Contract",
-      "icon": "file-text"
+      "link_to": "Contract",
+      "icon": "file-text",
+      "filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
     },
     {
       "type": "Link",

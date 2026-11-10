@@ -1,3 +1,4 @@
+from contract_ops.tests.helpers import make_contract
 """Integration tests on the disposable site; never run on a business site."""
 import frappe
 from unittest.mock import patch
@@ -24,14 +25,14 @@ def run():
         raise AssertionError(label)
 
     def contract(**kw):
-        values = dict(doctype='Sales Contract', contract_title='TEST Renewal '+token,
+        values = dict(doctype='Contract', contract_title='TEST Renewal '+token,
             company='Contract Ops Test Company', customer='Contract Ops Test Customer',
             currency='CNY', contract_amount=100, start_date='2025-01-01', end_date='2026-12-31',
             renewal_mode='自动续期', renewal_enabled=1, renewal_owner='Administrator',
             renewal_notice_days=30, renewal_months=12, renewal_leads='30,7,1,0',
             renewal_clause='ISOLATED TEST: auto-renew annually unless notice 30 calendar days before expiry')
         values.update(kw)
-        doc = frappe.get_doc(values).insert()
+        doc = make_contract(values).insert()
         doc.submit()
         return doc
 
@@ -98,7 +99,7 @@ def run():
         check('original signed dates unchanged', str(c.end_date) == '2026-12-31')
         fail('finished period cannot be processed twice', lambda: renewal.handle_cycle(cycle.name, '已确认按条款续期', 'test', '2027-01-01'))
         def overwrite():
-            x = frappe.get_doc('Sales Contract', c.name); x.renewal_notice_days = 10; x.save()
+            x = frappe.get_doc('Contract', c.name); x.renewal_notice_days = 10; x.save()
         fail('completed rules protected', overwrite)
         next_c = contract(start_date='2028-01-01', end_date='2028-12-31', renewal_enabled=0)
         fail('new contract required for signed outcome', lambda: renewal.handle_cycle(following.name, '已签新合同', 'test', '2027-01-01'))

@@ -26,9 +26,10 @@
       "fieldname": "sales_contract",
       "label": "销售合同",
       "fieldtype": "Link",
-      "options": "Sales Contract",
+      "options": "Contract",
       "reqd": 1,
-      "in_list_view": 1
+      "in_list_view": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
     },
     {
       "fieldname": "plan_title",

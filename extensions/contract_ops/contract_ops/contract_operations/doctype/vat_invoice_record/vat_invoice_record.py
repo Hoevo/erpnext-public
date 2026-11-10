@@ -28,7 +28,7 @@ class VATInvoiceRecord(Document):
             if contract and invoice.get("custom_sales_contract") != contract.name:
                 frappe.throw("关联应收发票必须属于本合同")
             if self.contract_group:
-                invoice_contract = frappe.get_doc("Sales Contract", invoice.get("custom_sales_contract"))
+                invoice_contract = frappe.get_doc("Contract", invoice.get("custom_sales_contract"))
                 if invoice_contract.contract_group != self.contract_group:
                     frappe.throw("关联应收发票必须属于本合同组")
         validate_invoice_shares(self)

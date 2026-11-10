@@ -108,7 +108,7 @@ def validate_payment_allocations(doc, method=None):
         contract=contracts[plan.sales_contract];contract.check_permission('read')
         if contract.get('billing_flow')!=PAY_FIRST or plan.disabled or money(row.allocated_amount)<=0:
             frappe.throw('收款期次已停用、票款顺序错误或分配金额无效')
-        if doc.company!=contract.company or doc.party!=contract.customer or doc.paid_from_account_currency!=contract.currency:
+        if doc.company!=contract.company or doc.party!=contract.party_name or doc.paid_from_account_currency!=contract.currency:
             frappe.throw('收款公司、客户及往来币种必须与合同一致')
         used=sum((money(r.funded_amount) for r in active_funding(plan.name) if r.source_payment!=doc.name),money(0))
         if used+money(row.allocated_amount)>money(plan.planned_amount):

@@ -8,16 +8,16 @@ import frappe
 from frappe.utils import now_datetime, getdate
 from contract_ops.income_source import parse_workbook, dump
 
-MODEL=dict(version='1.0',objects={
+MODEL=dict(version='1.1',objects={
     'Public Income Project':dict(key='name',identity='One source-scoped inventory row initially; grouped equipment is not split without evidence',
         source_key='source_key',source='source_import + source_sheet + source_row',annual_reference='CNY/year source observation; NULL/blank unknown, not receivable or cash'),
     'Public Income Import':dict(key='name',identity='SHA256 of original XLSX bytes',raw_bytes='original_b64',
         original_content_hash='source_sha256',facts='workbook_snapshot contains source cell, formula, cached value and comment; gaps kept in source_gaps',
         time='imported_at is record time, not effective year'),
-    'Sales Contract':dict(key='name',meaning='Executed annual or multi-year agreement; financial documents remain under existing contracts')},
+    'Contract':dict(key='name',meaning='Executed annual or multi-year agreement; financial documents remain under existing contracts')},
     relationships={
         'project_contract':dict(storage='Public Income Contract Link',key='relation_key',from_key='income_project -> Public Income Project.name',
-            to_key='sales_contract -> Sales Contract.name',valid_time='valid_from / valid_to copied from contract, not import date',
+            to_key='sales_contract -> Contract.name',valid_time='valid_from / valid_to copied from contract, not import date',
             status='待核实=unconfirmed; 已确认=confirmed; 已撤销=superseded',evidence='evidence; exact coverage must be confirmed, name equality alone is insufficient'),
         'project_source':dict(storage='Public Income Project',key='name',from_key='name',to_key='source_import -> Public Income Import.name',
             facts='source_sheet + source_row + source_row_json',valid_time='Source observation; effective year unknown'),
@@ -47,7 +47,9 @@ def validate_project(doc):
 
 def validate_contract_link(doc):
     project=frappe.get_doc('Public Income Project',doc.income_project);project.check_permission('read')
-    contract=frappe.get_doc('Sales Contract',doc.sales_contract);contract.check_permission('read')
+    contract=frappe.get_doc('Contract',doc.sales_contract);contract.check_permission('read')
+    from contract_ops.native_contract import require_sales_contract
+    require_sales_contract(contract)
     if contract.docstatus!=1:frappe.throw('只能关联已提交销售合同，清单不代表已经签约')
     doc.relation_key=hashlib.sha256((project.name+'|'+contract.name).encode()).hexdigest()
     existing=frappe.db.get_value('Public Income Contract Link',{'relation_key':doc.relation_key},'name')
@@ -59,7 +61,7 @@ def validate_contract_link(doc):
         frappe.throw('仍有已确认的后续续约关系，请先处理后续关系，再撤销本关系')
     if doc.previous_contract and doc.status!='已撤销':
         if doc.previous_contract==doc.sales_contract:frappe.throw('上一份合同不能是本合同')
-        previous=frappe.get_doc('Sales Contract',doc.previous_contract);previous.check_permission('read')
+        previous=frappe.get_doc('Contract',doc.previous_contract);previous.check_permission('read')
         if not frappe.db.exists('Public Income Contract Link',{'income_project':project.name,'sales_contract':previous.name,'status':'已确认'}):
             frappe.throw('上一份合同必须先确认为同一收入项目的合同')
         if not previous.end_date or not doc.valid_from or getdate(previous.end_date)>=getdate(doc.valid_from):
@@ -110,11 +112,11 @@ def get_project_contracts(income_project):
     rows=frappe.get_list('Public Income Contract Link',filters={'income_project':project.name},
         fields=['name','sales_contract','status','valid_from','valid_to','previous_contract','evidence'],limit_page_length=0,order_by='valid_from asc,creation asc')
     for row in rows:
-        contract=frappe.get_doc('Sales Contract',row.sales_contract);contract.check_permission('read')
+        contract=frappe.get_doc('Contract',row.sales_contract);contract.check_permission('read')
         group_name=None
         if contract.contract_group:
             group=frappe.get_doc('Contract Group',contract.contract_group);group.check_permission('read');group_name=group.group_name
-        row.update(contract_title=contract.contract_title,external_number=contract.external_number,customer=contract.customer,
+        row.update(contract_title=contract.contract_title,external_number=contract.external_number,customer=contract.party_name,
             contract_amount=contract.contract_amount,contract_group=contract.contract_group,contract_group_name=group_name)
     return rows
 
@@ -129,7 +131,7 @@ def audit_database():
     for row in frappe.get_all('Public Income Import',pluck='name'):
         batch=frappe.get_doc('Public Income Import',row)
         raw=base64.b64decode(batch.original_b64);assert hashlib.sha256(raw).hexdigest()==batch.source_sha256
-        source=json.loads(batch.workbook_snapshot);assert source and json.loads(batch.model_definition)['version']=='1.0'
+        source=json.loads(batch.workbook_snapshot);assert source and json.loads(batch.model_definition)['version'] in ('1.0','1.1')
         projects=frappe.get_all('Public Income Project',filters={'source_import':row},fields=['name','source_key','source_sheet','source_row','source_row_json','amount_status','annual_reference'])
         assert len(projects)==batch.project_count
         total=Decimal(0)
@@ -142,7 +144,7 @@ def audit_database():
         checks.append(dict(batch=row,projects=len(projects),source_sha256=batch.source_sha256,known_annual_total=str(total),gaps=json.loads(batch.source_gaps)))
     for link in frappe.get_all('Public Income Contract Link',fields=['income_project','sales_contract','valid_from','valid_to','status','evidence']):
         assert frappe.db.exists('Public Income Project',link.income_project)
-        contract=frappe.get_doc('Sales Contract',link.sales_contract)
+        contract=frappe.get_doc('Contract',link.sales_contract)
         assert link.valid_from==contract.start_date and link.valid_to==contract.end_date
         if link.status=='已确认':assert link.evidence
     return dict(status='passed',inputs='database bytes, model definitions, source rows and explicit relationships only',imports=checks,

@@ -1,3 +1,4 @@
+from contract_ops.tests.helpers import make_contract
 """Lifecycle acceptance on the explicitly isolated plan-test site only."""
 import frappe
 from frappe.utils import getdate
@@ -19,7 +20,7 @@ def run():
     frappe.set_user('Administrator')
     company = frappe.get_doc('Company', 'Contract Ops Test Company')
     customer = 'Contract Ops Test Customer'
-    contract = frappe.get_doc(dict(doctype='Sales Contract',contract_title='TEST Planning Lifecycle',
+    contract = make_contract(dict(doctype='Contract',contract_title='TEST Planning Lifecycle',
         company=company.name,customer=customer,currency='CNY',contract_amount=1000,signing_date='2026-11-09',
         start_date='2026-01-01',end_date='2026-12-31',notes='ISOLATED TEST DATA')).insert()
     contract.submit()
@@ -103,7 +104,7 @@ def run():
     # A group tax invoice may span two contracts, but its period allocation is mandatory.
     group=frappe.get_doc(dict(doctype='Contract Group',group_name='TEST Plan Combined Invoice')).insert()
     contract.reload();contract.contract_group=group.name;contract.save()
-    other=frappe.get_doc(dict(doctype='Sales Contract',contract_title='TEST Planning Second Contract',
+    other=make_contract(dict(doctype='Contract',contract_title='TEST Planning Second Contract',
         company=company.name,customer=customer,currency='CNY',contract_group=group.name,
         contract_amount=500,signing_date='2026-11-09',start_date='2026-01-01',end_date='2026-12-31')).insert()
     other.submit()

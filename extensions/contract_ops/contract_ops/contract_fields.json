@@ -1,0 +1,300 @@
+[
+  {
+    "fieldname": "contract_ops_section",
+    "label": "销售合同与票款扩展",
+    "fieldtype": "Section Break",
+    "insert_after": "amended_from",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "contract_ops_enabled",
+    "label": "启用销售票款管理",
+    "fieldtype": "Check",
+    "default": "0",
+    "depends_on": "eval:doc.party_type === \"Customer\"",
+    "insert_after": "contract_ops_section",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "contract_title",
+    "label": "合同名称",
+    "fieldtype": "Data",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "contract_ops_enabled",
+    "is_system_generated": 1,
+    "in_list_view": 1
+  },
+  {
+    "fieldname": "external_number",
+    "label": "外部合同编号",
+    "fieldtype": "Data",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "contract_title",
+    "is_system_generated": 1,
+    "in_list_view": 1
+  },
+  {
+    "fieldname": "contract_group",
+    "label": "所属合同组",
+    "fieldtype": "Link",
+    "options": "Contract Group",
+    "allow_on_submit": 1,
+    "in_standard_filter": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "external_number",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "company",
+    "label": "公司",
+    "fieldtype": "Link",
+    "options": "Company",
+    "in_standard_filter": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "contract_group",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "currency",
+    "label": "币种",
+    "fieldtype": "Link",
+    "options": "Currency",
+    "default": "CNY",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "company",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "contract_amount",
+    "label": "合同含税金额",
+    "fieldtype": "Currency",
+    "options": "currency",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "currency",
+    "is_system_generated": 1,
+    "in_list_view": 1
+  },
+  {
+    "fieldname": "signing_date",
+    "label": "旧系统签订日期（来源值）",
+    "fieldtype": "Date",
+    "description": "迁移保留的日期，不代替原生签署人、签署时间或签名。",
+    "depends_on": "eval:!!doc.signing_date",
+    "read_only": 1,
+    "insert_after": "contract_amount",
+    "is_system_generated": 1,
+    "no_copy": 1
+  },
+  {
+    "fieldname": "contract_file",
+    "label": "合同附件",
+    "fieldtype": "Attach",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "signing_date",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "notes",
+    "label": "备注",
+    "fieldtype": "Small Text",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "contract_file",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "planning_section",
+    "label": "开票与收款计划",
+    "fieldtype": "Section Break",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "notes",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "planning_html",
+    "label": "逐期计划与实际票款",
+    "fieldtype": "HTML",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "planning_section",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "billing_flow",
+    "label": "票款顺序",
+    "fieldtype": "Select",
+    "options": "先票后款\n先款后票",
+    "default": "先票后款",
+    "allow_on_submit": 1,
+    "description": "已有计划后不可切换；历史票款不自动回填计划。",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "planning_html",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_section",
+    "label": "续签与到期管理",
+    "fieldtype": "Section Break",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "billing_flow",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_mode",
+    "label": "续签方式",
+    "fieldtype": "Select",
+    "options": "待核实\n到期协商续签\n自动续期\n到期终止\n无固定期限",
+    "default": "待核实",
+    "in_standard_filter": 1,
+    "allow_on_submit": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_section",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_enabled",
+    "label": "启用续签提醒",
+    "fieldtype": "Check",
+    "default": "0",
+    "description": "核对条款并填写负责人后启用。每日自动检查；历史合同默认不启用。",
+    "allow_on_submit": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_mode",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_owner",
+    "label": "合同负责人",
+    "fieldtype": "Link",
+    "options": "User",
+    "in_standard_filter": 1,
+    "allow_on_submit": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_enabled",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_notice_days",
+    "label": "提前通知天数（自然日）",
+    "fieldtype": "Int",
+    "default": "0",
+    "description": "办理截止日＝合同结束日期减提前通知天数。自动续期合同按原件填写不续签通知期限。",
+    "allow_on_submit": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_owner",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_months",
+    "label": "每次自动续期月数",
+    "fieldtype": "Int",
+    "default": "12",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled && (doc.renewal_mode === \"自动续期\")",
+    "allow_on_submit": 1,
+    "insert_after": "renewal_notice_days",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_review_date",
+    "label": "复核日期（无固定期限）",
+    "fieldtype": "Date",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled && (doc.renewal_mode === \"无固定期限\")",
+    "allow_on_submit": 1,
+    "insert_after": "renewal_months",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_leads",
+    "label": "提醒提前量（自然日）",
+    "fieldtype": "Data",
+    "default": "30,7,1,0",
+    "description": "相对办理截止日，如30,7,1,0。逾期未处理每7天提醒一次。",
+    "allow_on_submit": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_review_date",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_clause",
+    "label": "续签条款原文及依据",
+    "fieldtype": "Small Text",
+    "allow_on_submit": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_leads",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_health",
+    "label": "提醒配置状态",
+    "fieldtype": "Data",
+    "read_only": 1,
+    "allow_on_submit": 1,
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_clause",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_html",
+    "label": "续签周期与办理记录",
+    "fieldtype": "HTML",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_health",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_column",
+    "label": "提醒规则",
+    "fieldtype": "Column Break",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_html",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "renewal_records_section",
+    "label": "续签周期与办理记录",
+    "fieldtype": "Section Break",
+    "depends_on": "eval:doc.party_type === \"Customer\" && doc.contract_ops_enabled",
+    "insert_after": "renewal_column",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "legacy_sales_contract",
+    "label": "旧销售合同编号",
+    "fieldtype": "Data",
+    "read_only": 1,
+    "no_copy": 1,
+    "unique": 1,
+    "insert_after": "renewal_records_section",
+    "is_system_generated": 1,
+    "depends_on": "eval:!!doc.legacy_sales_contract"
+  },
+  {
+    "fieldname": "legacy_source_sha256",
+    "label": "旧合同来源SHA256",
+    "fieldtype": "Data",
+    "read_only": 1,
+    "no_copy": 1,
+    "insert_after": "legacy_sales_contract",
+    "is_system_generated": 1,
+    "hidden": 1
+  },
+  {
+    "fieldname": "legacy_source_snapshot",
+    "label": "旧合同原始快照",
+    "fieldtype": "Long Text",
+    "read_only": 1,
+    "no_copy": 1,
+    "hidden": 1,
+    "insert_after": "legacy_source_sha256",
+    "is_system_generated": 1
+  },
+  {
+    "fieldname": "custom_legacy_archived",
+    "label": "旧来源归档标记",
+    "fieldtype": "Check",
+    "default": "0",
+    "read_only": 1,
+    "hidden": 1,
+    "no_copy": 1,
+    "is_system_generated": 1,
+    "insert_after": "legacy_source_snapshot"
+  }
+]

@@ -18,12 +18,12 @@ def _total(summary, field):
 
 
 def _invoice(contract, rate, label):
-    contract_doc = frappe.get_doc("Sales Contract", contract)
+    contract_doc = frappe.get_doc("Contract", contract)
     company = frappe.get_doc("Company", contract_doc.company)
     return frappe.get_doc({
         "doctype": "Sales Invoice",
         "company": contract_doc.company,
-        "customer": contract_doc.customer,
+        "customer": contract_doc.party_name,
         "currency": "CNY",
         "custom_sales_contract": contract,
         "custom_billing_period_start": "2026-01-01",
@@ -47,14 +47,14 @@ def _invoice(contract, rate, label):
 
 
 def _payment(contract_a_invoice, contract_b_invoice):
-    contract = frappe.get_doc("Sales Contract", CONTRACT_A)
+    contract = frappe.get_doc("Contract", CONTRACT_A)
     return frappe.get_doc({
         "doctype": "Payment Entry",
         "payment_type": "Receive",
         "company": contract.company,
         "posting_date": "2026-11-08",
         "party_type": "Customer",
-        "party": contract.customer,
+        "party": contract.party_name,
         "paid_from": "112202 - 小区应收款 - CYWY",
         "paid_to": "100205 - 建行金桥基本户 - CYWY",
         "paid_from_account_currency": "CNY",
@@ -76,14 +76,14 @@ def _payment(contract_a_invoice, contract_b_invoice):
 
 
 def _advance():
-    contract = frappe.get_doc("Sales Contract", CONTRACT_A)
+    contract = frappe.get_doc("Contract", CONTRACT_A)
     return frappe.get_doc({
         "doctype": "Payment Entry",
         "payment_type": "Receive",
         "company": contract.company,
         "posting_date": "2026-11-08",
         "party_type": "Customer",
-        "party": contract.customer,
+        "party": contract.party_name,
         "paid_from": "112202 - 小区应收款 - CYWY",
         "paid_to": "100205 - 建行金桥基本户 - CYWY",
         "paid_from_account_currency": "CNY",

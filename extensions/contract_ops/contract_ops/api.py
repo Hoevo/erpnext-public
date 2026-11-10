@@ -14,12 +14,15 @@ def get_contract_group_summary(contract_group: str):
     group = frappe.get_doc("Contract Group", contract_group)
     group.check_permission("read")
     contracts = frappe.get_all(
-        "Sales Contract",
-        filters={"contract_group": group.name, "docstatus": 1},
+        "Contract",
+        filters={"contract_group": group.name, "docstatus": 1, "party_type": "Customer", "contract_ops_enabled": 1},
         fields=["name", "contract_title", "external_number", "contract_amount", "start_date", "end_date"],
         order_by="external_number asc",
     )
     contract_names = [row.name for row in contracts]
+    # A group may span companies: fail closed rather than leak amounts or present partial totals.
+    for name in contract_names:
+        frappe.get_doc('Contract', name).check_permission('read')
     if not contract_names:
         return {"contracts": [], "vat_invoices": [], "receivables": [], "receipts": [], "unallocated_advances": [],
                 "totals": {"contract_amount": 0, "vat_invoices": 0, "receivables": 0, "receipts": 0, "outstanding": 0}}
@@ -34,6 +37,8 @@ def get_contract_group_summary(contract_group: str):
         order_by="posting_date asc, name asc",
     )
     invoice_names = [row.name for row in receivables]
+    for name in invoice_names:
+        frappe.get_doc('Sales Invoice', name).check_permission('read')
     receipts = []
     if invoice_names:
         receipts = frappe.db.sql(
@@ -54,6 +59,8 @@ def get_contract_group_summary(contract_group: str):
         fields=["name", "posting_date", "unallocated_amount"],
         order_by="posting_date asc, name asc",
     )
+    for name in {row.payment_entry for row in receipts} | {row.name for row in unallocated_advances}:
+        frappe.get_doc('Payment Entry', name).check_permission('read')
     return {
         "contracts": contracts,
         "vat_invoices": vat_invoices,

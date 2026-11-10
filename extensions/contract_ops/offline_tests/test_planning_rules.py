@@ -3,7 +3,7 @@ import unittest
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps' / 'contract_ops'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from contract_ops.planning_rules import allocate_fifo, business_due_date, money
 
 

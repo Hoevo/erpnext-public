@@ -1,0 +1,10 @@
+**
+!erpnext/
+!erpnext/**
+!pyproject.toml
+!extensions/
+!extensions/contract_ops/
+!extensions/contract_ops/**
+**/__pycache__
+**/*.pyc
+**/.local

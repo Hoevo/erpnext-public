@@ -1,3 +1,4 @@
+from contract_ops.tests.helpers import make_contract
 """Isolated acceptance of payment-first lifecycles; never run on the business site."""
 import frappe
 from frappe.utils import getdate
@@ -14,7 +15,7 @@ def run():
     calendar=frappe.get_doc(dict(doctype='Holiday List',holiday_list_name='TEST Flow Calendar '+frappe.generate_hash(length=5),
         from_date='2026-01-01',to_date='2027-12-31',holidays=[dict(holiday_date='2026-11-07',description='rest'),dict(holiday_date='2026-11-08',description='rest')])).insert()
     def contract(label):
-        d=frappe.get_doc(dict(doctype='Sales Contract',contract_title='TEST Payment First '+label,billing_flow='先款后票',
+        d=make_contract(dict(doctype='Contract',contract_title='TEST Payment First '+label,billing_flow='先款后票',
             company=company.name,customer=customer,currency='CNY',contract_amount=1000,
             start_date='2026-01-01',end_date='2026-12-31')).insert();d.submit();return d
     def collection(c,trigger,day_type='自然日'):
@@ -67,7 +68,7 @@ def run():
     assert frappe.db.count('Contract Billing Plan',{'source_collection_plan':p.name,'source_cancelled':1})==1
     assert frappe.db.get_value('Contract Collection Plan',p.name,'received_amount')==600
     must_fail(lambda:tax(c,frappe.db.get_value('Contract Billing Plan',{'source_collection_plan':p.name,'source_cancelled':1},'name'),100))
-    changed=frappe.get_doc('Sales Contract',c.name);changed.billing_flow='先票后款';must_fail(changed.save)
+    changed=frappe.get_doc('Contract',c.name);changed.billing_flow='先票后款';must_fail(changed.save)
 
     full_c=contract('Full Period');full=collection(full_c,'本期收齐','工作日')
     first=payment(full,400);first.submit();assert not plans(full)
@@ -87,7 +88,7 @@ def run():
     # Accounting receivables can exist before the external tax invoice.
     match_c=contract('Matched Receivable');match=collection(match_c,'每笔到账')
     foreign_c=contract('Wrong Receivable');foreign=collection(foreign_c,'每笔到账')
-    si=frappe.get_doc(dict(doctype='Sales Invoice',company=company.name,customer=customer,currency='CNY',
+    si=frappe.get_doc(dict(doctype='Sales Invoice',set_posting_time=1,company=company.name,customer=customer,currency='CNY',
         custom_sales_contract=match_c.name,posting_date='2026-11-09',due_date='2026-11-09',
         debit_to=company.default_receivable_account,disable_rounded_total=1,
         items=[dict(item_code='CONTRACT-OPS-TEST-SERVICE',qty=1,rate=250,income_account=company.default_income_account,cost_center=company.cost_center)])).insert()

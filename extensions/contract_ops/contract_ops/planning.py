@@ -26,10 +26,12 @@ def changed(doc, before, field):
 
 
 def lock_contract(name):
-    rows = frappe.db.sql('SELECT name FROM `tabSales Contract` WHERE name=%s FOR UPDATE', name)
+    rows = frappe.db.sql('SELECT name FROM `tabContract` WHERE name=%s FOR UPDATE', name)
     if not rows:
         frappe.throw('销售合同不存在')
-    contract = frappe.get_doc('Sales Contract', name)
+    contract = frappe.get_doc('Contract', name)
+    from contract_ops.native_contract import require_sales_contract
+    require_sales_contract(contract)
     if contract.docstatus != 1:
         frappe.throw('计划必须关联已提交的销售合同')
     return contract
@@ -107,7 +109,7 @@ def validate_invoice_link(name, contract):
     invoice.check_permission('read')
     if invoice.docstatus != 1 or invoice.get('custom_sales_contract') != contract.name:
         frappe.throw('应收发票必须已提交且属于本期销售合同')
-    if any(invoice.get(f) != contract.get(f) for f in ('company','customer','currency')):
+    if any(invoice.get(f) != contract.get('party_name' if f == 'customer' else f) for f in ('company','customer','currency')):
         frappe.throw('应收发票主体、客户或币种与合同不一致')
     return invoice
 
@@ -117,13 +119,13 @@ def validate_vat_allocations(doc):
     if not rows:
         new_submission = doc.is_new() or doc.docstatus == 0 or (doc.docstatus == 1 and frappe.db.get_value(doc.doctype, doc.name, 'docstatus') != 1)
         has_plans = doc.sales_contract and frappe.db.exists('Contract Billing Plan', {'sales_contract': doc.sales_contract, 'disabled': 0})
-        if doc.sales_contract and frappe.db.get_value('Sales Contract',doc.sales_contract,'billing_flow')=='先款后票':
+        if doc.sales_contract and frappe.db.get_value('Contract',doc.sales_contract,'billing_flow')=='先款后票':
             has_plans=True
         if doc.contract_group and not has_plans:
-            has_plans = frappe.db.sql('''SELECT p.name FROM `tabContract Billing Plan` p JOIN `tabSales Contract` c ON c.name=p.sales_contract
+            has_plans = frappe.db.sql('''SELECT p.name FROM `tabContract Billing Plan` p JOIN `tabContract` c ON c.name=p.sales_contract
                 WHERE c.contract_group=%s AND p.disabled=0 LIMIT 1''', doc.contract_group)
             if not has_plans:
-                has_plans=frappe.db.exists('Sales Contract',{'contract_group':doc.contract_group,'billing_flow':'先款后票','docstatus':1})
+                has_plans=frappe.db.exists('Contract',{'contract_group':doc.contract_group,'billing_flow':'先款后票','docstatus':1})
         if new_submission and has_plans:
             frappe.throw('本合同已设置开票计划，请分配本次税票到对应期次')
         return
@@ -144,7 +146,7 @@ def validate_vat_allocations(doc):
         contract.check_permission('read')
         if plan.disabled or money(row.allocated_amount) <= 0:
             frappe.throw('期次已停用或分配金额无效')
-        if any(doc.get(f) != contract.get(f) for f in ('company','customer','currency')):
+        if any(doc.get(f) != contract.get('party_name' if f == 'customer' else f) for f in ('company','customer','currency')):
             frappe.throw('税票主体、客户和币种必须与所有分配期次一致')
         if doc.sales_contract and doc.sales_contract != contract.name:
             frappe.throw('税票分配期次不属于所选合同')
@@ -161,7 +163,7 @@ def validate_vat_allocations(doc):
     for name, (invoice, amount) in sorted(invoices.items()):
         frappe.db.sql('SELECT name FROM `tabSales Invoice` WHERE name=%s FOR UPDATE', name)
         used = frappe.db.sql('SELECT COALESCE(SUM(expected_amount),0) FROM `tabContract Receipt Plan` WHERE sales_invoice=%s AND cancelled=0 AND source_vat!=%s', (name, doc.name or ''))[0][0]
-        if frappe.db.get_value('Sales Contract',invoice.custom_sales_contract,'billing_flow')=='先款后票':
+        if frappe.db.get_value('Contract',invoice.custom_sales_contract,'billing_flow')=='先款后票':
             used=frappe.db.sql('''SELECT COALESCE(SUM(a.allocated_amount),0) FROM `tabVAT Plan Allocation` a
                 JOIN `tabVAT Invoice Record` v ON v.name=a.parent WHERE v.docstatus=1 AND v.name!=%s
                 AND COALESCE(NULLIF(a.sales_invoice,''),v.sales_invoice)=%s''',(doc.name or '',name))[0][0]
@@ -223,7 +225,7 @@ def validate_receipt_plan(doc):
     if original_invoice and doc.sales_invoice != original_invoice:
         frappe.throw('收款计划不能更换来源税票已指定的应收发票')
     if doc.sales_invoice:
-        contract = frappe.get_doc('Sales Contract', doc.sales_contract)
+        contract = frappe.get_doc('Contract', doc.sales_contract)
         invoice = validate_invoice_link(doc.sales_invoice, contract)
         frappe.db.sql('SELECT name FROM `tabSales Invoice` WHERE name=%s FOR UPDATE', invoice.name)
         other = frappe.db.sql('SELECT COALESCE(SUM(expected_amount),0) FROM `tabContract Receipt Plan` WHERE sales_invoice=%s AND cancelled=0 AND name!=%s', (invoice.name, doc.name or ''))[0][0]
@@ -434,7 +436,7 @@ def migrate_historical_plan_links(rows):
     This is intentionally a narrow data-migration operation: it neither creates
     accounting documents nor changes a VAT, Sales Invoice, Payment Entry, or
     allocated amount.  It is used when a legacy source-document contract is
-    split into one Sales Contract per physical cabinet.
+    split into one Contract per physical cabinet.
     """
     rows = frappe.parse_json(rows) if isinstance(rows, str) else rows
     if not isinstance(rows, list) or not rows:
@@ -476,8 +478,10 @@ def migrate_historical_plan_links(rows):
 
 @frappe.whitelist()
 def get_contract_planning(sales_contract):
-    contract = frappe.get_doc('Sales Contract', sales_contract)
+    contract = frappe.get_doc('Contract', sales_contract)
     contract.check_permission('read')
+    from contract_ops.native_contract import require_sales_contract
+    require_sales_contract(contract)
     def visible(doctype, fields):
         return frappe.get_list(doctype, filters={'sales_contract': contract.name}, fields=fields, limit_page_length=0, order_by='creation asc')
     return dict(currency=contract.currency,

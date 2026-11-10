@@ -6,9 +6,9 @@ build-backend = "flit_core.buildapi"
 name = "contract_ops"
 authors = [{name = "Contract Ops Contributors"}]
 description = "Sales contracts and VAT invoice registers for ERPNext"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dynamic = ["version"]
 
 [tool.bench.frappe-dependencies]
-frappe = ">=16.0.0,<17.0.0"
-erpnext = ">=16.0.0,<17.0.0"
+frappe = ">=17.0.0-dev,<18.0.0"
+erpnext = ">=17.0.0-dev,<18.0.0"

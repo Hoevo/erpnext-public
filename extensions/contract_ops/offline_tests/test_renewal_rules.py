@@ -2,7 +2,7 @@ import sys
 import unittest
 from datetime import date
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'apps/contract_ops'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from contract_ops.renewal_rules import deadline, due_stage, next_period, offsets
 
 

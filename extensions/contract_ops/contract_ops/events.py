@@ -5,10 +5,12 @@ from contract_ops.rules import validate_limit
 
 def locked_contract(name):
     # Serialize invoice submissions on the same contract, including parallel requests.
-    rows = frappe.db.sql("SELECT name FROM `tabSales Contract` WHERE name=%s FOR UPDATE", (name,))
+    rows = frappe.db.sql("SELECT name FROM `tabContract` WHERE name=%s FOR UPDATE", (name,))
     if not rows:
         frappe.throw("销售合同不存在")
-    contract = frappe.get_doc("Sales Contract", name)
+    contract = frappe.get_doc("Contract", name)
+    from contract_ops.native_contract import require_sales_contract
+    require_sales_contract(contract)
     contract.check_permission("read")
     if contract.docstatus != 1:
         frappe.throw("必须选择已提交的销售合同")
@@ -17,7 +19,7 @@ def locked_contract(name):
 
 def check_party(doc, contract):
     for field in ("company", "customer", "currency"):
-        if doc.get(field) != contract.get(field):
+        if doc.get(field) != contract.get('party_name' if field == 'customer' else field):
             frappe.throw("发票的公司、客户和币种必须与合同一致")
 
 

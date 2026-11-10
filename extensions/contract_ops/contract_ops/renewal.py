@@ -29,7 +29,7 @@ def recipient_issue(contract):
     user = frappe.db.get_value('User', owner, ['enabled', 'user_type'], as_dict=True)
     if not user or not user.enabled or user.user_type != 'System User':
         return '负责人已停用或非系统用户'
-    if contract.name and not contract.is_new() and not frappe.has_permission('Sales Contract', 'read', doc=contract, user=owner):
+    if contract.name and not contract.is_new() and not frappe.has_permission('Contract', 'read', doc=contract, user=owner):
         return '负责人无合同查看权限'
     if not frappe.has_permission(CYCLE, 'read', user=owner):
         return '负责人无续签记录查看权限'
@@ -94,7 +94,7 @@ def projected(cycle, today):
 
 
 def new_cycle(contract, start, end, previous=None):
-    signature = key(contract.name, start, end, *[contract.get(f) for f in RULE_FIELDS])
+    signature = key(contract.name, start, end, *[contract.get('party_name' if f == 'customer' else f) for f in RULE_FIELDS])
     existing = frappe.db.get_value(CYCLE, {'rule_key': signature}, 'name')
     if existing:
         cycle = frappe.get_doc(CYCLE, existing)
@@ -103,7 +103,7 @@ def new_cycle(contract, start, end, previous=None):
             internal_save(cycle)
         return cycle
     cycle = frappe.get_doc(dict(doctype=CYCLE, sales_contract=contract.name, contract_title=contract.contract_title,
-        company=contract.company, customer=contract.customer, period_start=start, period_end=end,
+        company=contract.company, customer=contract.party_name, period_start=start, period_end=end,
         mode=contract.renewal_mode, deadline=deadline(contract.renewal_mode, end, contract.renewal_notice_days, contract.renewal_review_date),
         responsible_user=contract.renewal_owner, notice_days=contract.renewal_notice_days,
         months=contract.renewal_months, leads=contract.renewal_leads, clause=contract.renewal_clause,
@@ -117,7 +117,7 @@ def synchronize(contract, method=None):
     """Called after save and by the scheduler, including disabled/cancelled contracts."""
     if contract.is_new():
         return
-    frappe.db.sql('SELECT name FROM `tabSales Contract` WHERE name=%s FOR UPDATE', contract.name)
+    frappe.db.sql('SELECT name FROM `tabContract` WHERE name=%s FOR UPDATE', contract.name)
     active = [frappe.get_doc(CYCLE, name) for name in frappe.get_all(CYCLE,
         filters={'sales_contract': contract.name, 'status': ['in', OPEN]}, pluck='name')]
     issue = configuration_issue(contract)
@@ -129,9 +129,9 @@ def synchronize(contract, method=None):
                 cycle.status = '已停用'
             close_todo(cycle)
             internal_save(cycle)
-        frappe.db.set_value('Sales Contract', contract.name, 'renewal_health', issue or '未启用', update_modified=False)
+        frappe.db.set_value('Contract', contract.name, 'renewal_health', issue or '未启用', update_modified=False)
         return
-    expected = key(contract.name, contract.start_date, contract.end_date, *[contract.get(f) for f in RULE_FIELDS])
+    expected = key(contract.name, contract.start_date, contract.end_date, *[contract.get('party_name' if f == 'customer' else f) for f in RULE_FIELDS])
     # Completed periods remain historical. Auto-renewal creates its successor explicitly in handle_cycle().
     completed = frappe.db.exists(CYCLE, {'sales_contract': contract.name, 'status': ['in', OUTCOMES[1:]]})
     if not completed:
@@ -149,7 +149,7 @@ def synchronize(contract, method=None):
         cycle.health = '已逾期' if getdate(cycle.deadline) < getdate(nowdate()) else '正常'
         cycle.next_reminder = projected(cycle, nowdate())
         internal_save(cycle)
-    frappe.db.set_value('Sales Contract', contract.name, 'renewal_health', '已启用', update_modified=False)
+    frappe.db.set_value('Contract', contract.name, 'renewal_health', '已启用', update_modified=False)
 
 
 def send_due(cycle, today):
@@ -188,13 +188,13 @@ def daily():
     """One contract per transaction: locking plus unique event keys prevent duplicates."""
     today = nowdate()
     sent, failed = 0, 0
-    names = set(frappe.get_all('Sales Contract', filters={'renewal_enabled': 1}, pluck='name'))
+    names = set(frappe.get_all('Contract', filters={'party_type': 'Customer', 'contract_ops_enabled': 1, 'renewal_enabled': 1}, pluck='name'))
     names.update(frappe.get_all(CYCLE, filters={'status': ['in', OPEN]}, pluck='sales_contract'))
     for name in sorted(names):
         try:
             contract_sent = 0
-            frappe.db.sql('SELECT name FROM `tabSales Contract` WHERE name=%s FOR UPDATE', name)
-            contract = frappe.get_doc('Sales Contract', name)
+            frappe.db.sql('SELECT name FROM `tabContract` WHERE name=%s FOR UPDATE', name)
+            contract = frappe.get_doc('Contract', name)
             synchronize(contract)
             if contract.docstatus == 1 and contract.renewal_enabled and not configuration_issue(contract):
                 for cycle_name in frappe.get_all(CYCLE, filters={'sales_contract': name, 'status': ['in', OPEN]}, pluck='name'):
@@ -210,8 +210,10 @@ def daily():
 
 @frappe.whitelist()
 def get_cycles(sales_contract):
-    contract = frappe.get_doc('Sales Contract', sales_contract)
+    contract = frappe.get_doc('Contract', sales_contract)
     contract.check_permission('read')
+    from contract_ops.native_contract import require_sales_contract
+    require_sales_contract(contract)
     rows = frappe.get_all(CYCLE, filters={'sales_contract': sales_contract}, fields=['*'], order_by='creation asc')
     return dict(health=configuration_issue(contract) or ('已启用' if contract.renewal_enabled else '未启用'), cycles=rows)
 
@@ -221,9 +223,11 @@ def handle_cycle(cycle_name, outcome, evidence, handled_on, new_contract=None, e
     name = frappe.db.get_value(CYCLE, cycle_name, 'sales_contract')
     if not name:
         frappe.throw('续签周期不存在')
-    frappe.db.sql('SELECT name FROM `tabSales Contract` WHERE name=%s FOR UPDATE', name)
-    contract = frappe.get_doc('Sales Contract', name)
+    frappe.db.sql('SELECT name FROM `tabContract` WHERE name=%s FOR UPDATE', name)
+    contract = frappe.get_doc('Contract', name)
     contract.check_permission('write')
+    from contract_ops.native_contract import require_sales_contract
+    require_sales_contract(contract)
     cycle = frappe.get_doc(CYCLE, cycle_name)
     if contract.docstatus != 1 or cycle.status not in OPEN or not contract.renewal_enabled:
         frappe.throw('本周期已完成或提醒未启用，不能继续办理')
@@ -242,9 +246,10 @@ def handle_cycle(cycle_name, outcome, evidence, handled_on, new_contract=None, e
     if outcome == '已签新合同':
         if not new_contract or new_contract == name:
             frappe.throw('请选择已提交的续签新合同')
-        successor = frappe.get_doc('Sales Contract', new_contract)
+        successor = frappe.get_doc('Contract', new_contract)
         successor.check_permission('read')
-        if successor.docstatus != 1 or successor.company != contract.company or successor.customer != contract.customer:
+        require_sales_contract(successor)
+        if successor.docstatus != 1 or successor.company != contract.company or successor.party_name != contract.party_name:
             frappe.throw('新合同须已提交且公司、客户与原合同一致')
         if not successor.start_date or (cycle.period_end and getdate(successor.start_date) <= getdate(cycle.period_end)):
             frappe.throw('续签新合同必须在本周期结束之后开始')
@@ -270,13 +275,13 @@ def handle_cycle(cycle_name, outcome, evidence, handled_on, new_contract=None, e
 def cycle_permission(doc, ptype='read', user=None):
     if ptype not in ('read', 'report', 'export', 'print'):
         return False
-    return frappe.has_permission('Sales Contract', 'read', doc=frappe.get_doc('Sales Contract', doc.sales_contract), user=user)
+    return frappe.has_permission('Contract', 'read', doc=frappe.get_doc('Contract', doc.sales_contract), user=user)
 
 
 def cycle_query(user=None):
     from frappe.desk.reportview import build_match_conditions
-    cond = build_match_conditions('Sales Contract', user=user)
-    return 'EXISTS (SELECT name FROM `tabSales Contract` WHERE name=`tabContract Renewal Cycle`.sales_contract' + (f' AND ({cond})' if cond else '') + ')'
+    cond = build_match_conditions('Contract', user=user)
+    return 'EXISTS (SELECT name FROM `tabContract` WHERE name=`tabContract Renewal Cycle`.sales_contract' + (f' AND ({cond})' if cond else '') + ')'
 
 
 def notice_permission(doc, ptype='read', user=None):

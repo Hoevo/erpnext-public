@@ -1,5 +1,6 @@
-frappe.ui.form.on("Sales Contract", {
+frappe.ui.form.on("Contract", {
     refresh(frm) {
+        if (frm.doc.party_type !== 'Customer' || !frm.doc.contract_ops_enabled) return;
         if (!frm.is_new()) render_renewal_cycles(frm);
         if (!frm.is_new()) render_contract_plans(frm);
         if (frm.doc.docstatus !== 1) return;
@@ -11,11 +12,11 @@ frappe.ui.form.on("Sales Contract", {
         frm.add_custom_button(__("刷新计划"), () => render_contract_plans(frm));
         frm.add_custom_button(__("登记税票"), () => frappe.new_doc("VAT Invoice Record", {
             sales_contract: frm.doc.name, company: frm.doc.company,
-            customer: frm.doc.customer, currency: frm.doc.currency,
+            customer: frm.doc.party_name, currency: frm.doc.currency,
         }));
         frm.add_custom_button(__("新建应收发票"), () => frappe.new_doc("Sales Invoice", {
             custom_sales_contract: frm.doc.name, company: frm.doc.company,
-            customer: frm.doc.customer, currency: frm.doc.currency,
+            customer: frm.doc.party_name, currency: frm.doc.currency,
         }));
         frm.add_custom_button(__("查看应收发票"), () => frappe.set_route("List", "Sales Invoice", {
             custom_sales_contract: frm.doc.name,

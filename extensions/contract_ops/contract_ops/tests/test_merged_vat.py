@@ -1,3 +1,4 @@
+from contract_ops.tests.helpers import make_contract
 """Combined tax bills across contracts and payments, on the isolated clone only."""
 import frappe
 from contract_ops.tests.test_planning import must_fail
@@ -11,7 +12,7 @@ def run():
     company=frappe.get_doc('Company','Contract Ops Test Company');customer='Contract Ops Test Customer'
     def contract(title,flow='先款后票',amount=1000):
         group=frappe.get_doc(dict(doctype='Contract Group',group_name='TEST Merge '+title)).insert()
-        c=frappe.get_doc(dict(doctype='Sales Contract',contract_title='TEST Merge '+title,billing_flow=flow,
+        c=make_contract(dict(doctype='Contract',contract_title='TEST Merge '+title,billing_flow=flow,
             company=company.name,customer=customer,currency='CNY',contract_amount=amount,contract_group=group.name,
             start_date='2026-01-01',end_date='2026-12-31')).insert();c.submit();return c
     def collection(c,amount):

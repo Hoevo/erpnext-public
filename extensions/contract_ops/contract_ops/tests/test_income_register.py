@@ -1,3 +1,4 @@
+from contract_ops.tests.helpers import make_contract
 """Source conservation and annual contract links on the disposable site only."""
 import frappe
 from frappe.utils import getdate
@@ -16,7 +17,8 @@ def run():
     assert sum(p.amount_status=='原表年参考金额' for p in projects)==50
     assert sum(p.amount_status=='非年度计价' for p in projects)==1
     assert sum(p.amount_status=='金额未提供' for p in projects)==1
-    project=frappe.get_doc('Public Income Project',projects[0].name)
+    untouched = next(p for p in projects if not frappe.db.exists('Public Income Contract Link', {'income_project': p.name}))
+    project=frappe.get_doc('Public Income Project',untouched.name)
     def overwrite_source():
         original=frappe.get_doc('Public Income Import',batch.name);original.review_notes='changed';original.save()
     must_fail(overwrite_source)
@@ -25,7 +27,7 @@ def run():
         unknown.annual_reference='0';unknown.save()
     must_fail(wrong_unknown)
     def contract(year):
-        c=frappe.get_doc(dict(doctype='Sales Contract',contract_title='TEST Income Renewal '+str(year),
+        c=make_contract(dict(doctype='Contract',contract_title='TEST Income Renewal '+str(year),
             company='Contract Ops Test Company',customer='Contract Ops Test Customer',currency='CNY',contract_amount=100,
             start_date=f'{year}-01-01',end_date=f'{year}-12-31')).insert();c.submit();return c
     a,b=contract(2025),contract(2026)

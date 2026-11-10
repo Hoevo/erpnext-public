@@ -6,9 +6,9 @@ frappe.ui.form.on('Contract Billing Plan', {
             ['sales_contract','plan_title','period_start','period_end','invoice_due_date','planned_amount','disabled'].forEach(f=>frm.set_df_property(f,'read_only',1));
         }
         if (!frm.is_new()) frm.add_custom_button(__('登记本期开票'), () => {
-            frappe.db.get_doc('Sales Contract',frm.doc.sales_contract).then(contract => {
+            frappe.db.get_doc('Contract',frm.doc.sales_contract).then(contract => {
                 frappe.new_doc('VAT Invoice Record',{
-                    sales_contract:contract.name, company:contract.company, customer:contract.customer,
+                    sales_contract:contract.name, company:contract.company, customer:contract.party_name,
                     currency:contract.currency, gross_amount:Math.max(0, frm.doc.planned_amount-frm.doc.billed_amount),
                 }, (doc) => {
                     const row = frappe.model.add_child(doc, 'VAT Plan Allocation', 'plan_allocations');
@@ -19,8 +19,8 @@ frappe.ui.form.on('Contract Billing Plan', {
             });
         });
         if(!frm.is_new())frm.add_custom_button(__('合并登记税票'),()=>{
-            frappe.db.get_doc('Sales Contract',frm.doc.sales_contract).then(contract=>
-                frappe.contract_ops.open_merge({company:contract.company,customer:contract.customer,currency:contract.currency,billing_plan:frm.doc.name}));
+            frappe.db.get_doc('Contract',frm.doc.sales_contract).then(contract=>
+                frappe.contract_ops.open_merge({company:contract.company,customer:contract.party_name,currency:contract.currency,billing_plan:frm.doc.name}));
         });
         if (!frm.is_new() && !frm.doc.source_collection_plan) frm.add_custom_button(__('回填历史已开票'), () => {
             const d = new frappe.ui.Dialog({title: __('历史计划初始化'), fields: [
