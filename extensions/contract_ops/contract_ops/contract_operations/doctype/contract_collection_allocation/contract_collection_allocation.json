@@ -1,0 +1,39 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Collection Allocation",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "field_order": [
+    "collection_plan",
+    "allocated_amount",
+    "currency"
+  ],
+  "fields": [
+    {
+      "fieldname": "collection_plan",
+      "label": "先款后票收款计划",
+      "fieldtype": "Link",
+      "options": "Contract Collection Plan",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "allocated_amount",
+      "label": "本笔到账分配金额",
+      "fieldtype": "Currency",
+      "reqd": 1,
+      "in_list_view": 1,
+      "options": "currency"
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "istable": 1,
+  "permissions": []
+}

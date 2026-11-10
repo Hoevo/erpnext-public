@@ -1,0 +1,88 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Renewal Notice",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "track_changes": 1,
+  "field_order": [
+    "cycle",
+    "recipient",
+    "stage",
+    "sent_on",
+    "notification",
+    "notice_key"
+  ],
+  "fields": [
+    {
+      "fieldname": "cycle",
+      "label": "续签周期",
+      "fieldtype": "Link",
+      "options": "Contract Renewal Cycle",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "recipient",
+      "label": "接收人",
+      "fieldtype": "Link",
+      "options": "User",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "stage",
+      "label": "提醒节点",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "sent_on",
+      "label": "发送日期",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "notification",
+      "label": "站内通知",
+      "fieldtype": "Link",
+      "options": "Notification Log",
+      "read_only": 1
+    },
+    {
+      "fieldname": "notice_key",
+      "label": "唯一标识",
+      "fieldtype": "Data",
+      "unique": 1,
+      "hidden": 1,
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

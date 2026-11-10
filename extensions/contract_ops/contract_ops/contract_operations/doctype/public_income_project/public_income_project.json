@@ -1,0 +1,205 @@
+{
+  "doctype": "DocType",
+  "name": "Public Income Project",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "track_changes": 1,
+  "allow_rename": 0,
+  "field_order": [
+    "project_title",
+    "community",
+    "income_type",
+    "counterparty_text",
+    "evidence_status",
+    "renewal_rule",
+    "pricing_section",
+    "quantity_text",
+    "amount_status",
+    "annual_reference",
+    "pricing_text",
+    "sharing_rule",
+    "bonus_rule",
+    "issues",
+    "contracts_section",
+    "contracts_html",
+    "source_section",
+    "source_import",
+    "source_sheet",
+    "source_row",
+    "source_key",
+    "source_row_json"
+  ],
+  "fields": [
+    {
+      "fieldname": "project_title",
+      "label": "公益性收入项目",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "community",
+      "label": "小区",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_standard_filter": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "income_type",
+      "label": "收入类型",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_standard_filter": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "counterparty_text",
+      "label": "原表往来单位",
+      "fieldtype": "Data",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "evidence_status",
+      "label": "资料状态",
+      "fieldtype": "Select",
+      "options": "清单观察／合同待核实\n合同已核实\n停用",
+      "default": "清单观察／合同待核实",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "renewal_rule",
+      "label": "续约规则",
+      "fieldtype": "Data",
+      "default": "通常每年续约，实际期限以签署合同为准"
+    },
+    {
+      "fieldname": "pricing_section",
+      "label": "原表计价与分配信息",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "quantity_text",
+      "label": "原表数量（空白为未提供）",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "amount_status",
+      "label": "金额口径",
+      "fieldtype": "Select",
+      "options": "原表年参考金额\n非年度计价\n金额未提供",
+      "default": "金额未提供"
+    },
+    {
+      "fieldname": "annual_reference",
+      "label": "原表年参考金额（元）",
+      "fieldtype": "Data",
+      "description": "仅来源清单参考金额，不是合同金额、应收或已收；空白代表未知。"
+    },
+    {
+      "fieldname": "pricing_text",
+      "label": "原表金额／公式／计价说明",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "sharing_rule",
+      "label": "原表分成约定",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "bonus_rule",
+      "label": "原表奖金约定",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "issues",
+      "label": "待核实事项",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "contracts_section",
+      "label": "历年合同及续约关系",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "contracts_html",
+      "label": "关联合同",
+      "fieldtype": "HTML"
+    },
+    {
+      "fieldname": "source_section",
+      "label": "原始来源",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "source_import",
+      "label": "来源批次",
+      "fieldtype": "Link",
+      "options": "Public Income Import",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_sheet",
+      "label": "原工作表",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_row",
+      "label": "原行号",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_key",
+      "label": "稳定来源标识",
+      "fieldtype": "Data",
+      "unique": 1,
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "source_row_json",
+      "label": "原始行快照",
+      "fieldtype": "Code",
+      "options": "JSON",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "title_field": "project_title",
+  "show_title_field_in_link": 1,
+  "search_fields": "community,income_type,counterparty_text"
+}

@@ -1,0 +1,47 @@
+{
+  "doctype": "DocType",
+  "name": "VAT Plan Allocation",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "field_order": [
+    "billing_plan",
+    "allocated_amount",
+    "sales_invoice",
+    "currency"
+  ],
+  "fields": [
+    {
+      "fieldname": "billing_plan",
+      "label": "开票计划",
+      "fieldtype": "Link",
+      "options": "Contract Billing Plan",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "allocated_amount",
+      "label": "本次含税分配金额",
+      "fieldtype": "Currency",
+      "reqd": 1,
+      "in_list_view": 1,
+      "options": "currency"
+    },
+    {
+      "fieldname": "sales_invoice",
+      "label": "对应应收发票",
+      "fieldtype": "Link",
+      "options": "Sales Invoice",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "istable": 1,
+  "permissions": []
+}

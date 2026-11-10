@@ -1,0 +1,206 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Billing Plan",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "field_order": [
+    "sales_contract",
+    "plan_title",
+    "period_start",
+    "period_end",
+    "invoice_due_date",
+    "currency",
+    "planned_amount",
+    "due_rule",
+    "due_days",
+    "fixed_due_date",
+    "holiday_list",
+    "disabled",
+    "billed_amount",
+    "received_amount",
+    "status",
+    "notes",
+    "source_collection_plan",
+    "source_payment",
+    "source_key",
+    "funding_evidence",
+    "source_cancelled"
+  ],
+  "fields": [
+    {
+      "fieldname": "sales_contract",
+      "label": "销售合同",
+      "fieldtype": "Link",
+      "options": "Sales Contract",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "plan_title",
+      "label": "期次名称",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "period_start",
+      "label": "计费开始日期",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "period_end",
+      "label": "计费结束日期",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "invoice_due_date",
+      "label": "计划开票日期",
+      "fieldtype": "Date",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "planned_amount",
+      "label": "计划含税金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "due_rule",
+      "label": "收款到期规则",
+      "fieldtype": "Select",
+      "options": "固定日期\n开票后自然日\n开票后工作日\n确认收票后自然日\n确认收票后工作日",
+      "default": "确认收票后工作日",
+      "reqd": 1,
+      "depends_on": "eval:!doc.source_collection_plan"
+    },
+    {
+      "fieldname": "due_days",
+      "label": "间隔天数",
+      "fieldtype": "Int",
+      "default": "15",
+      "depends_on": "eval:!doc.source_collection_plan && (doc.due_rule != '固定日期')"
+    },
+    {
+      "fieldname": "fixed_due_date",
+      "label": "固定收款日期",
+      "fieldtype": "Date",
+      "depends_on": "eval:!doc.source_collection_plan && (doc.due_rule == '固定日期')"
+    },
+    {
+      "fieldname": "holiday_list",
+      "label": "工作日历",
+      "fieldtype": "Link",
+      "options": "Holiday List",
+      "depends_on": "eval:!doc.source_collection_plan && doc.due_rule.endsWith('工作日')",
+      "description": "使用日历中登记的休息日、节假日及覆盖范围，不自行推算法定节假日。"
+    },
+    {
+      "fieldname": "disabled",
+      "label": "停止后续开票",
+      "fieldtype": "Check",
+      "default": "0"
+    },
+    {
+      "fieldname": "billed_amount",
+      "label": "已开票金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "received_amount",
+      "label": "已关联实际收款",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "计划状态",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "notes",
+      "label": "计划依据与备注",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "source_collection_plan",
+      "label": "来源先款后票收款计划",
+      "fieldtype": "Link",
+      "options": "Contract Collection Plan",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_payment",
+      "label": "来源收款单（逐笔起算）",
+      "fieldtype": "Link",
+      "options": "Payment Entry",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_key",
+      "label": "资金来源唯一键",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "funding_evidence",
+      "label": "到账依据快照",
+      "fieldtype": "Table",
+      "options": "Contract Funding Evidence",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_cancelled",
+      "label": "来源收款已取消",
+      "fieldtype": "Check",
+      "read_only": 1,
+      "default": "0"
+    }
+  ],
+  "autoname": "CBP-.YYYY.-.#####",
+  "title_field": "plan_title",
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

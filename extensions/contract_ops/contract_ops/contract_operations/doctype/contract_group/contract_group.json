@@ -1,0 +1,89 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Group",
+  "module": "Contract Operations",
+  "autoname": "naming_series:",
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "title_field": "group_name",
+  "field_order": [
+    "naming_series",
+    "group_name",
+    "original_attachment",
+    "notes",
+    "summary_section",
+    "summary_html"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "label": "组编号规则",
+      "fieldtype": "Select",
+      "options": "CG-.YYYY.-.#####",
+      "default": "CG-.YYYY.-.#####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "group_name",
+      "label": "合同组名称",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "original_attachment",
+      "label": "原始附件",
+      "fieldtype": "Attach"
+    },
+    {
+      "fieldname": "notes",
+      "label": "备注",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "summary_section",
+      "label": "协议与票款汇总",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "summary_html",
+      "label": "合同组详情",
+      "fieldtype": "HTML"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "email": 1,
+      "share": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}
