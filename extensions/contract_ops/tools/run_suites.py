@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / '.local'
 SUITES = ('test_native_contract', 'test_planning', 'test_two_flows', 'test_merged_vat',
-          'test_income_register', 'test_renewal', 'test_renewal_permissions')
+          'test_income_register', 'test_renewal', 'test_renewal_permissions', 'test_audit_security')
 
 
 def main():

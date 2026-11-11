@@ -6,7 +6,6 @@ frappe.ui.form.on("Contract Group", {
     },
 });
 
-const money = (value) => format_currency(value || 0, "CNY");
 const escape_html = (value) => frappe.utils.escape_html(String(value || ""));
 const link = (doctype, name, label = name) =>
     `<a href="/app/${frappe.router.slug(doctype)}/${encodeURIComponent(name)}">${escape_html(label)}</a>`;
@@ -23,8 +22,9 @@ async function render_summary(frm) {
         freeze: false,
     });
     const data = response.message;
+    const money = (value) => format_currency(value || 0, data.currency);
     const metrics = [
-        ["合同金额", data.totals.contract_amount, "contracts", "组内有效协议两年推算金额；不等于应收或欠款"],
+        ["合同登记金额", data.totals.contract_amount, "contracts", "组内有效合同登记金额；不等于应收或欠款"],
         ["已开税票", data.totals.vat_invoices, "vat-invoices", "已提交且未取消，合并税票仅计入本组分配金额"],
         ["已确认应收", data.totals.receivables, "receivables", "已提交且未取消的销售发票"],
         ["实际收款", data.totals.receipts, "receipts", "仅按收款核销分配金额计入"],
@@ -45,7 +45,7 @@ async function render_summary(frm) {
       </style>
       <p class="text-muted">金额按不同口径分别展示，不能相加。点击金额或单据名称可追溯。</p>
       <div class="contract-group-metrics">${cards}</div>
-      ${table("contracts", "协议清单", ["销售合同", "协议号", "期限", "两年推算金额"], rows(data.contracts, [
+      ${table("contracts", "协议清单", ["销售合同", "协议号", "期限", "合同登记金额"], rows(data.contracts, [
           (x) => link("Contract", x.name, x.name), (x) => escape_html(x.external_number),
           (x) => `${escape_html(x.start_date)} 至 ${escape_html(x.end_date)}`, (x) => money(x.contract_amount),
       ]))}

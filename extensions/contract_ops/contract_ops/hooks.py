@@ -43,5 +43,6 @@ doc_events = {
     "Sales Invoice": {
         "validate": "contract_ops.events.validate_sales_invoice",
         "before_submit": "contract_ops.events.validate_sales_invoice",
+        "before_update_after_submit": "contract_ops.events.validate_sales_invoice",
     },
 }

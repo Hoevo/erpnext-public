@@ -6,7 +6,7 @@
 
 ## 与 0.6.0 的区别
 
-| 方面 | 0.6.0 | 0.7.0 开发版 |
+| 方面 | 0.6.0 | 0.7.0 |
 |---|---|---|
 | 合同主档 | 自建 Sales Contract | 原生 Contract，Customer 类型且启用销售票款管理 |
 | 客户、期限、修订 | 自建字段 | 复用 party_name、start_date、end_date、amended_from |
@@ -41,7 +41,7 @@ python extensions\contract_ops\tools\check_extension.py
 python -m unittest discover -s extensions\contract_ops\offline_tests -v
 ```
 
-隔离环境使用 `infra\test.compose.yaml`，密码文件保存在 Git 忽略的本地目录，所有数据库目录使用 OPENCLAW_DB_PATH。端口为临时验收端口 8261，数据库、站点及 Redis 与 8260 的 16 版分开。测试完成应停止临时服务。
+隔离环境使用 `infra\test.compose.yaml`，密码文件保存在 Git 忽略的本地目录，所有数据库目录使用 OPENCLAW_DB_PATH。8261 目前由17新环境占用，禁止同时启动隔离环境的前端；数据库回归只启动隔离数据库、Redis 和一次性后台容器，不暴露网页端口。测试完成应停止临时服务。本地常驻环境及启动方法见 [infra\LIVE.md](infra/LIVE.md)。
 
 `infra\initialize.sh` 从已提供的恢复文件创建隔离站点，并按 before → migrate → after 顺序核对；拒绝覆盖已有站点。恢复文件与站点目录属于本地私有数据，不提交代码。初始化时需将 sites、logs 和 restore 目录授予镜像中的 frappe 用户（UID 1000）访问权限。17 版独立 realtime 服务需要 common config 的 webserver_host=backend、webserver_port=8000；Nginx 模板保留真实浏览器 Origin，让原生的同源检查正常工作。
 
@@ -50,6 +50,8 @@ python -m unittest discover -s extensions\contract_ops\offline_tests -v
 在恢复了 0.6.0 业务备份的隔离站点，先运行 `contract_ops.tests.preservation.snapshot` 的 before 阶段，再迁移，随后运行 after 阶段；比较旧字段、业务表行数及逐合同映射。该检查必须在新增测试数据之前执行。
 
 实际站点回归入口：`contract_ops.tests.test_native_contract.run`、`test_planning.run`、`test_two_flows.run`、`test_merged_vat.run`、`test_renewal.run` 和 `test_renewal_permissions.run`。这些测试会写入、提交测试数据，只允许在约定的隔离站点执行。离线测试不能替代这些数据库及网页验收，也不能证明所有 ERPNext 17 模块已完成升级验收。
+
+`tools\run_suites.py` 还包含收入项目回归和合并前审计回归 `test_audit_security.run`，按顺序执行8组数据库检查。历史回填、关系迁移和收款计划修复接口仅允许 System Manager 通过 POST 调用，并继续检查具体单据权限。版本内容见 [CHANGELOG.md](CHANGELOG.md)，本次审计见 [docs\合并审计记录.md](docs/合并审计记录.md)。
 
 ## 本次与旧版对比结果（2026-11-10）
 

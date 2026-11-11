@@ -101,6 +101,7 @@ def _advance():
 
 def run_acceptance():
     """Exercise multi-invoice, cross-contract allocation and cancellation without commits."""
+    assert frappe.local.site == 'erp.merged-test.localhost', 'Never run on a business site'
     frappe.db.sql("SAVEPOINT contract_group_acceptance")
     baseline = get_contract_group_summary(GROUP)
     try:

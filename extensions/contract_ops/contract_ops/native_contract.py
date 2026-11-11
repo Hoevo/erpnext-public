@@ -17,6 +17,9 @@ def require_sales_contract(doc):
 def validate(doc, method=None):
     if frappe.flags.in_contract_ops_migration:
         return
+    if doc.is_new() and any(doc.get(field) for field in
+                            ('legacy_sales_contract', 'legacy_source_sha256', 'legacy_source_snapshot')):
+        frappe.throw('旧合同来源与迁移证据只能由受控迁移生成')
     before = doc.get_doc_before_save()
     if before and before.get('contract_ops_enabled') and before.docstatus != 0:
         if doc.party_type != 'Customer' or doc.party_name != before.party_name or not doc.contract_ops_enabled:

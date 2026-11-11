@@ -24,6 +24,15 @@ def check_party(doc, contract):
 
 
 def validate_sales_invoice(doc, method=None):
+    before = doc.get_doc_before_save()
+    if before and before.docstatus == 1 and any(
+            (before.get(field) or '') != (doc.get(field) or '') for field in
+            ('custom_sales_contract', 'custom_billing_period_start', 'custom_billing_period_end')):
+        linked = any(frappe.db.exists(doctype, {field: doc.name}) for doctype, field in (
+            ('VAT Invoice Record', 'sales_invoice'), ('VAT Invoice Allocation', 'sales_invoice'),
+            ('VAT Plan Allocation', 'sales_invoice'), ('Contract Receipt Plan', 'sales_invoice')))
+        if linked:
+            frappe.throw('应收已关联税票或收款计划，不能改写合同及计费期间，请先核对并处理关联单据')
     if not doc.get("custom_sales_contract"):
         return
     contract = locked_contract(doc.custom_sales_contract)

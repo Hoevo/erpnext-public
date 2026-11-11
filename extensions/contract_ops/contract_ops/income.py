@@ -71,7 +71,7 @@ def validate_contract_link(doc):
         if before and any(before.get(f)!=doc.get(f) for f in ('income_project','sales_contract')):
             frappe.throw('关系两端不可改写，请撤销旧关系并新增正确关联')
 
-@frappe.whitelist()
+@frappe.whitelist(methods=['POST'])
 def import_register(filename,file_b64,expected_sha=None,preview=0):
     frappe.only_for('System Manager')
     if '/' in filename or '\\' in filename or not filename.lower().endswith('.xlsx'):frappe.throw('请提供原始XLSX文件名')

@@ -34,6 +34,9 @@ services:
     image: redis:8.6-alpine
     cpus: 0.25
     restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - ${OPENCLAW_DB_PATH}/redis-queue:/data
   backend:
     <<: *app
     environment:

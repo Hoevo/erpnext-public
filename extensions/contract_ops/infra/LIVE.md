@@ -12,7 +12,7 @@ wsl -d ERPNextDev -u root --exec bash /mnt/d/erpnext-v17/extensions/contract_ops
 
 停止时将最后的 `up -d --pull never` 改为 `stop`。脚本读取 WSL 私有配置 `/var/lib/erpnext/v17-live/live.env`，数据库和附件位于 OPENCLAW_DB_PATH 对应的专用 WSL 磁盘。不得把环境文件、备份或附件提交到 Git。
 
-服务包含后台、Nginx、Python realtime、worker、scheduler、MariaDB 和两套 Redis。所有服务均设置重启策略，但 Docker 和 ERPNextDev WSL 仍须先运行。使用已验收镜像，不在启动时拉取或构建。
+服务包含后台、Nginx、Python realtime、worker、scheduler、MariaDB 和两套 Redis。队列Redis启用AOF，持久化目录为数据根目录内的 `redis-queue`。所有服务均设置重启策略，但 Docker 和 ERPNextDev WSL 仍须先运行。使用已验收镜像，不在启动时拉取或构建；扩展通过只读源码挂载运行，当前扩展版本为0.7.0，镜像内置扩展代码未重新打包。
 
 恢复后沿用原有登录信息。新站点未启用测试模式；邮件发送暂时静默，启用实际通知前应由管理员核对邮件配置。不要在本环境运行写入回归数据的测试套件。
 

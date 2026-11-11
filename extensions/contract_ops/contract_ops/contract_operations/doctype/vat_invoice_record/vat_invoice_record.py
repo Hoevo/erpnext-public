@@ -15,6 +15,7 @@ class VATInvoiceRecord(Document):
             check_party(self, contract)
         if self.contract_group:
             group = frappe.get_doc("Contract Group", self.contract_group)
+            group.check_permission("read")
             if contract and contract.contract_group != group.name:
                 frappe.throw("销售合同不属于所选合同组")
         self.invoice_number = (self.invoice_number or "").strip()
@@ -25,6 +26,8 @@ class VATInvoiceRecord(Document):
             invoice.check_permission("read")
             if invoice.docstatus != 1:
                 frappe.throw("关联应收发票必须已提交")
+            if any(invoice.get(field) != self.get(field) for field in ('company', 'customer', 'currency')):
+                frappe.throw('税票与关联应收发票的公司、客户和币种必须一致')
             if contract and invoice.get("custom_sales_contract") != contract.name:
                 frappe.throw("关联应收发票必须属于本合同")
             if self.contract_group:

@@ -265,7 +265,7 @@ def create_receipt_plans(doc):
         refresh_billing_plan(plan)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=['POST'])
 def repair_vat_receipt_plans(vat_invoice):
     """Idempotently restore receipt-plan projections for a submitted VAT record.
 
@@ -274,6 +274,7 @@ def repair_vat_receipt_plans(vat_invoice):
     missing projection rows; it never creates or changes tax invoices,
     receivables, Payment Entries, or their allocation amounts.
     """
+    frappe.only_for('System Manager')
     vat = frappe.get_doc('VAT Invoice Record', vat_invoice)
     vat.check_permission('write')
     if vat.docstatus != 1:
@@ -284,6 +285,12 @@ def repair_vat_receipt_plans(vat_invoice):
     invoices, plans = set(), set()
     for row in vat.plan_allocations:
         plan = frappe.get_doc('Contract Billing Plan', row.billing_plan)
+        plan.check_permission('read')
+        contract = lock_contract(plan.sales_contract)
+        contract.check_permission('read')
+        if plan.get('source_collection_plan'):
+            refresh_billing_plan(plan.name)
+            continue
         suffix = ''
         if sum(1 for candidate in vat.plan_allocations if candidate.billing_plan == plan.name) > 1:
             suffix = '|' + (row.sales_invoice or vat.sales_invoice or 'UNLINKED')
@@ -375,9 +382,10 @@ def cancel_receipt_plans(doc):
         refresh_billing_plan(name)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=['POST'])
 def backfill_historical_vat(billing_plan, vat_invoice, sales_invoice, allocated_amount):
     """Controlled history-only link; never creates a second tax, AR, or payment document."""
+    frappe.only_for('System Manager')
     plan = frappe.get_doc('Contract Billing Plan', billing_plan)
     contract = lock_contract(plan.sales_contract)
     plan.check_permission('write')
@@ -405,9 +413,10 @@ def backfill_historical_vat(billing_plan, vat_invoice, sales_invoice, allocated_
             'allocated_amount': amount}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=['POST'])
 def backfill_historical_vat_bulk(vat_invoice, allocations):
     """Atomically attach one historical tax invoice to all of its plan/invoice shares."""
+    frappe.only_for('System Manager')
     rows = frappe.parse_json(allocations) if isinstance(allocations, str) else allocations
     vat = frappe.get_doc('VAT Invoice Record', vat_invoice)
     vat.check_permission('write')
@@ -417,6 +426,9 @@ def backfill_historical_vat_bulk(vat_invoice, allocations):
         frappe.throw('历史税票回填分配合计必须等于税票金额')
     for row in rows:
         plan = frappe.get_doc('Contract Billing Plan', row.get('billing_plan'))
+        plan.check_permission('write')
+        if plan.get('source_collection_plan'):
+            frappe.throw('历史税票回填不适用于实际到账生成的开票计划')
         contract = lock_contract(plan.sales_contract)
         invoice = validate_invoice_link(row.get('sales_invoice'), contract)
         amount = money(row.get('allocated_amount'))
@@ -429,7 +441,7 @@ def backfill_historical_vat_bulk(vat_invoice, allocations):
     return {'vat_invoice': vat.name, 'allocations': len(rows)}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=['POST'])
 def migrate_historical_plan_links(rows):
     """Move existing historical VAT/receipt-plan links to replacement cabinet plans.
 
@@ -438,6 +450,7 @@ def migrate_historical_plan_links(rows):
     allocated amount.  It is used when a legacy source-document contract is
     split into one Contract per physical cabinet.
     """
+    frappe.only_for('System Manager')
     rows = frappe.parse_json(rows) if isinstance(rows, str) else rows
     if not isinstance(rows, list) or not rows:
         frappe.throw('请提供至少一条历史期次迁移记录')
@@ -450,22 +463,50 @@ def migrate_historical_plan_links(rows):
             frappe.throw('历史期次迁移缺少税票分配或目标开票计划')
         allocation = frappe.get_doc('VAT Plan Allocation', allocation_name)
         vat = frappe.get_doc('VAT Invoice Record', allocation.parent)
+        vat.check_permission('write')
         if vat.docstatus != 1:
             frappe.throw('只能迁移已提交税票的历史期次')
         new_plan = frappe.get_doc('Contract Billing Plan', new_plan_name)
+        new_plan.check_permission('write')
         contract = lock_contract(new_plan.sales_contract)
+        contract.check_permission('read')
+        old_plan = frappe.get_doc('Contract Billing Plan', allocation.billing_plan)
+        old_plan.check_permission('write')
+        if new_plan.disabled or new_plan.get('source_collection_plan') or old_plan.get('source_collection_plan'):
+            frappe.throw('历史关系迁移只能使用启用的普通开票计划')
+        if any(vat.get(field) != contract.get('party_name' if field == 'customer' else field)
+               for field in ('company', 'customer', 'currency')):
+            frappe.throw('目标合同与税票的公司、客户和币种必须一致')
+        if vat.sales_contract and vat.sales_contract != contract.name:
+            frappe.throw('目标计划不属于税票所选合同')
+        if vat.contract_group and vat.contract_group != contract.contract_group:
+            frappe.throw('目标计划不属于税票所选合同组')
         invoice_name = allocation.get('sales_invoice') or vat.get('sales_invoice')
         invoice = validate_invoice_link(invoice_name, contract) if invoice_name else None
         if invoice and money(allocation.allocated_amount) > money(invoice.rounded_total or invoice.grand_total):
             frappe.throw('税票分配金额超过关联应收金额')
         old_plan_name = allocation.billing_plan
+        if not receipt_plan_name and any((receipt.sales_invoice or '') == (invoice_name or '')
+                for receipt in frappe.get_all('Contract Receipt Plan', filters={
+                    'source_vat': vat.name, 'billing_plan': old_plan_name, 'cancelled': 0},
+                    fields=['sales_invoice'])):
+            frappe.throw('请同时指定对应收款计划，不能只迁移税票关系')
+        used = frappe.db.sql('''SELECT COALESCE(SUM(a.allocated_amount),0) FROM `tabVAT Plan Allocation` a
+            JOIN `tabVAT Invoice Record` v ON v.name=a.parent
+            WHERE a.billing_plan=%s AND v.docstatus=1 AND a.name!=%s''',
+            (new_plan.name, allocation.name))[0][0]
+        if money(used) + money(allocation.allocated_amount) > money(new_plan.planned_amount):
+            frappe.throw('迁移后累计开票超过目标计划金额')
         if old_plan_name != new_plan.name:
             frappe.db.set_value('VAT Plan Allocation', allocation.name, 'billing_plan', new_plan.name,
                                 update_modified=False)
             changed_plans.update((old_plan_name, new_plan.name))
         if receipt_plan_name:
             receipt = frappe.get_doc('Contract Receipt Plan', receipt_plan_name)
-            if receipt.source_vat != vat.name or receipt.sales_invoice != invoice_name:
+            receipt.check_permission('write')
+            if (receipt.source_vat != vat.name or (receipt.sales_invoice or '') != (invoice_name or '')
+                    or receipt.billing_plan != old_plan_name or receipt.cancelled
+                    or money(receipt.expected_amount) != money(allocation.allocated_amount)):
                 frappe.throw('收款计划与税票分配/应收发票不一致')
             frappe.db.set_value('Contract Receipt Plan', receipt.name,
                                 {'billing_plan': new_plan.name, 'sales_contract': contract.name},
