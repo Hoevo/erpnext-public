@@ -1,0 +1,144 @@
+name: ECS Deploy
+
+# 参考 Hoevo/qrcode_backend ci.yml 的 deploy-prod 模式：
+# tag push → Default 组 self-hosted runner（hoevo-ci-* 等，与 qrcode deploy 共用
+# `ssh ecs` 通道）→ 远端执行 /data/erpnext/update.sh <tag>（幂等，自带门禁）。
+# 注意：tag push 触发的 workflow 取 tag commit 树里的本文件——
+# 发布 ecs-v<N> 前本文件必须已存在于 develop。
+
+on:
+  push:
+    tags: ['ecs-v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要部署的 tag（ecs-v<N>）；失败窗口修复后重跑用"
+        required: true
+        type: string
+      dry_run:
+        description: "仅做准入校验与 ssh 连通性检查，不执行 update.sh"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+# 一个部署窗口只允许一个 deploy；排队不取消（避免中途掐断 migrate）
+concurrency:
+  group: ecs-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy erpnext.hoevo.com
+    runs-on: [self-hosted, ci]
+    timeout-minutes: 90
+    environment:
+      name: prod
+      url: https://erpnext.hoevo.com
+    steps:
+      - name: Resolve tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          tag="$INPUT_TAG"
+          # bash 正则整串匹配（grep 按行匹配，多行输入可绕过）
+          [[ "$tag" =~ ^ecs-v[0-9]+$ ]] \
+            || { echo "::error::tag 必须形如 ecs-v<N>，当前: $tag"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "部署目标: $tag (dry_run=${{ inputs.dry_run || false }})"
+
+      - name: Admission（tag 在 develop 历史内 + 序号校验）
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # tag commit 必须在 origin/develop 历史内：
+          # compare/develop...<tag> 的 status 为 identical/behind 才放行。
+          # 不用 gh CLI（runner 上无存在证据）；curl+python3 已核实可用，仓库 public。
+          status="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/Hoevo/erpnext/compare/develop...${TAG}" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+          case "$status" in
+            identical|behind) echo "compare develop...${TAG}: $status" ;;
+            *) echo "::error::${TAG} 不在 develop 历史内（compare status: $status），拒绝部署"; exit 1 ;;
+          esac
+          # 序号校验按事件区分：
+          # - push：触发时本 tag 已在远端，须从最大值中排除自身，要求 new > max(excl self)
+          # - dispatch：重跑仅限最新 tag（new >= max 含全部），拒绝向更旧版本回滚镜像
+          #   （旧代码 + 已迁移库 = 不受支持状态，见 ECS-DEPLOY.md 失败语义）
+          if [ "${{ github.event_name }}" = "push" ]; then
+            max="$(git ls-remote --tags https://github.com/Hoevo/erpnext.git 'refs/tags/ecs-v*' \
+              | awk -F/ -v t="$TAG" '$3 ~ /^ecs-v[0-9]+$/ && $3 != t {sub(/^ecs-v/, "", $3); print $3}' \
+              | sort -n | tail -1)"
+            new="${TAG#ecs-v}"
+            [ "$new" -gt "${max:-0}" ] \
+              || { echo "::error::${TAG} 未严格递增（远端已有 ecs-v${max}）"; exit 1; }
+            echo "递增校验通过: ecs-v${new} > ecs-v${max:-无}"
+          else
+            max="$(git ls-remote --tags https://github.com/Hoevo/erpnext.git 'refs/tags/ecs-v*' \
+              | awk -F/ '$3 ~ /^ecs-v[0-9]+$/ {sub(/^ecs-v/, "", $3); print $3}' \
+              | sort -n | tail -1)"
+            new="${TAG#ecs-v}"
+            [ "$new" -ge "${max:-0}" ] \
+              || { echo "::error::dispatch 重跑仅限最新 tag（远端最新 ecs-v${max}），拒绝向 ${TAG} 回滚"; exit 1; }
+            echo "dispatch 校验通过: ecs-v${new} >= ecs-v${max:-无}"
+          fi
+
+      - name: Deploy（ssh ecs）
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+        run: |
+          set -euo pipefail
+          if [ "$DRY_RUN" = "true" ]; then
+            ssh -o BatchMode=yes ecs \
+              'echo "ssh ok: $(whoami)@$(hostname)"; test -x /data/erpnext/update.sh && echo "update.sh 可达"'
+            exit 0
+          fi
+          # 日志流式回传 Actions run；update.sh 内部序列与失败语义见
+          # extensions/contract_ops/infra/ECS-DEPLOY.md
+          ssh -o BatchMode=yes -o ServerAliveInterval=30 ecs "bash /data/erpnext/update.sh $TAG"
+
+      - name: Notify Feishu（成功）
+        if: success() && inputs.dry_run != true
+        env:
+          FEISHU_BOT_WEBHOOK: ${{ secrets.FEISHU_BOT_WEBHOOK }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          if [ -z "${FEISHU_BOT_WEBHOOK:-}" ]; then
+            echo "::warning::未配置 FEISHU_BOT_WEBHOOK secret，跳过飞书通知"
+            exit 0
+          fi
+          python3 - <<'PY' | curl -sS -X POST "$FEISHU_BOT_WEBHOOK" -H "Content-Type: application/json" --data-binary @-
+          import json, os
+          text = "✅ ERPNext 生产部署成功\ntag: {}\nby: {}\nhttps://erpnext.hoevo.com".format(
+              os.environ["TAG"], os.environ["ACTOR"])
+          print(json.dumps({"msg_type": "text", "content": {"text": text}}))
+          PY
+
+      - name: Notify Feishu（失败/取消）
+        # cancelled 也要告警：timeout 到点或人工取消时远端状态未知且大概率停机，
+        # 恰是最需要人工介入的场景；admission 被拒同样走这里（文案不预设停机）
+        if: (failure() || cancelled()) && inputs.dry_run != true
+        env:
+          FEISHU_BOT_WEBHOOK: ${{ secrets.FEISHU_BOT_WEBHOOK }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: https://github.com/Hoevo/erpnext/actions/runs/${{ github.run_id }}
+          RUN_STATUS: ${{ job.status }}
+        run: |
+          if [ -z "${FEISHU_BOT_WEBHOOK:-}" ]; then
+            echo "::warning::未配置 FEISHU_BOT_WEBHOOK secret，跳过飞书通知"
+            exit 0
+          fi
+          python3 - <<'PY' | curl -sS -X POST "$FEISHU_BOT_WEBHOOK" -H "Content-Type: application/json" --data-binary @-
+          import json, os
+          text = "❌ ERPNext 生产部署 run 未成功（{}）\ntag: {}\nby: {}\n若已进入远端阶段（update.sh），服务可能停机，需人工确认服务器状态\n{}".format(
+              os.environ["RUN_STATUS"], os.environ["TAG"], os.environ["ACTOR"], os.environ["RUN_URL"])
+          print(json.dumps({"msg_type": "text", "content": {"text": text}}))
+          PY
