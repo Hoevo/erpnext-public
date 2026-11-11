@@ -1,0 +1,236 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Renewal Cycle",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "track_changes": 1,
+  "field_order": [
+    "sales_contract",
+    "contract_title",
+    "customer",
+    "company",
+    "period_start",
+    "period_end",
+    "mode",
+    "deadline",
+    "responsible_user",
+    "status",
+    "health",
+    "next_reminder",
+    "notice_days",
+    "months",
+    "leads",
+    "clause",
+    "rule_key",
+    "previous_cycle",
+    "new_contract",
+    "handled_on",
+    "handled_by",
+    "evidence",
+    "evidence_file",
+    "todo"
+  ],
+  "fields": [
+    {
+      "fieldname": "sales_contract",
+      "label": "销售合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "contract_title",
+      "label": "合同名称",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "customer",
+      "label": "客户",
+      "fieldtype": "Link",
+      "options": "Customer",
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "company",
+      "label": "公司",
+      "fieldtype": "Link",
+      "options": "Company",
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "period_start",
+      "label": "本周期开始",
+      "fieldtype": "Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "period_end",
+      "label": "本周期结束",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "mode",
+      "label": "续签方式",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "deadline",
+      "label": "办理截止日",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "responsible_user",
+      "label": "负责人",
+      "fieldtype": "Link",
+      "options": "User",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "办理状态",
+      "fieldtype": "Select",
+      "options": "待处理\n洽谈中\n已签新合同\n已确认按条款续期\n已发出不续签通知\n已终止\n规则已替换\n已停用",
+      "default": "待处理",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "health",
+      "label": "提醒状态",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "next_reminder",
+      "label": "下一提醒日期",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "notice_days",
+      "label": "通知提前天数",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "months",
+      "label": "续期月数",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "leads",
+      "label": "提醒提前量",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "clause",
+      "label": "条款依据",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "rule_key",
+      "label": "规则唯一标识",
+      "fieldtype": "Data",
+      "unique": 1,
+      "hidden": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "previous_cycle",
+      "label": "上一周期",
+      "fieldtype": "Link",
+      "options": "Contract Renewal Cycle",
+      "read_only": 1
+    },
+    {
+      "fieldname": "new_contract",
+      "label": "续签新合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "read_only": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "handled_on",
+      "label": "处理日期",
+      "fieldtype": "Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "handled_by",
+      "label": "处理人",
+      "fieldtype": "Link",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "evidence",
+      "label": "处理说明",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "evidence_file",
+      "label": "处理附件",
+      "fieldtype": "Attach",
+      "read_only": 1
+    },
+    {
+      "fieldname": "todo",
+      "label": "当前待办",
+      "fieldtype": "Link",
+      "options": "ToDo",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

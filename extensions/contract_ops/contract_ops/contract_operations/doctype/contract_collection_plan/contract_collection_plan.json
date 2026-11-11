@@ -1,0 +1,167 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Collection Plan",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "field_order": [
+    "sales_contract",
+    "plan_title",
+    "period_start",
+    "period_end",
+    "receipt_due_date",
+    "currency",
+    "planned_amount",
+    "invoice_trigger",
+    "invoice_days",
+    "day_type",
+    "holiday_list",
+    "disabled",
+    "received_amount",
+    "outstanding_amount",
+    "status",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "sales_contract",
+      "label": "销售合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "reqd": 1,
+      "in_list_view": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "plan_title",
+      "label": "收款期次名称",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "period_start",
+      "label": "计费开始日期",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "period_end",
+      "label": "计费结束日期",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "receipt_due_date",
+      "label": "约定收款日期",
+      "fieldtype": "Date",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "planned_amount",
+      "label": "计划含税收款金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "invoice_trigger",
+      "label": "开票起算方式",
+      "fieldtype": "Select",
+      "options": "每笔到账\n本期收齐",
+      "default": "每笔到账",
+      "reqd": 1
+    },
+    {
+      "fieldname": "invoice_days",
+      "label": "到账后开票间隔天数",
+      "fieldtype": "Int",
+      "default": "15",
+      "reqd": 1
+    },
+    {
+      "fieldname": "day_type",
+      "label": "天数口径",
+      "fieldtype": "Select",
+      "options": "自然日\n工作日",
+      "default": "自然日",
+      "reqd": 1
+    },
+    {
+      "fieldname": "holiday_list",
+      "label": "工作日历",
+      "fieldtype": "Link",
+      "options": "Holiday List",
+      "depends_on": "eval:doc.day_type=='工作日'"
+    },
+    {
+      "fieldname": "disabled",
+      "label": "停止后续收款分配",
+      "fieldtype": "Check",
+      "default": "0"
+    },
+    {
+      "fieldname": "received_amount",
+      "label": "已分配实际到账",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "outstanding_amount",
+      "label": "计划未收金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "收款计划状态",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "notes",
+      "label": "合同约定及依据",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "autoname": "CCP-.YYYY.-.#####",
+  "title_field": "plan_title",
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

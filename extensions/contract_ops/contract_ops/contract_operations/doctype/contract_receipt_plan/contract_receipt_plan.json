@@ -1,0 +1,194 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Receipt Plan",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "field_order": [
+    "source_key",
+    "source_vat",
+    "billing_plan",
+    "sales_contract",
+    "sales_invoice",
+    "currency",
+    "expected_amount",
+    "invoice_date",
+    "due_rule",
+    "due_days",
+    "fixed_due_date",
+    "holiday_list",
+    "received_on",
+    "due_date",
+    "received_amount",
+    "outstanding_amount",
+    "status",
+    "cancelled",
+    "allocation_policy"
+  ],
+  "fields": [
+    {
+      "fieldname": "source_key",
+      "label": "来源唯一键",
+      "fieldtype": "Data",
+      "unique": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_vat",
+      "label": "来源税票",
+      "fieldtype": "Link",
+      "options": "VAT Invoice Record",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "billing_plan",
+      "label": "开票计划",
+      "fieldtype": "Link",
+      "options": "Contract Billing Plan",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "sales_contract",
+      "label": "销售合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "sales_invoice",
+      "label": "对应应收发票",
+      "fieldtype": "Link",
+      "options": "Sales Invoice",
+      "description": "税票未关联应收时可后补；必须是同合同、同主体、同币种的已提交发票。"
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "expected_amount",
+      "label": "本次计划收款金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "invoice_date",
+      "label": "实际开票日期",
+      "fieldtype": "Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "due_rule",
+      "label": "收款到期规则快照",
+      "fieldtype": "Select",
+      "options": "固定日期\n开票后自然日\n开票后工作日\n确认收票后自然日\n确认收票后工作日",
+      "read_only": 1
+    },
+    {
+      "fieldname": "due_days",
+      "label": "间隔天数快照",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "fixed_due_date",
+      "label": "固定到期日快照",
+      "fieldtype": "Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "holiday_list",
+      "label": "工作日历快照",
+      "fieldtype": "Link",
+      "options": "Holiday List",
+      "read_only": 1
+    },
+    {
+      "fieldname": "received_on",
+      "label": "确认收到合格发票日期",
+      "fieldtype": "Date",
+      "description": "确认后才按工作日规则计算收款到期日；未知时保留为空。"
+    },
+    {
+      "fieldname": "due_date",
+      "label": "计划收款日期",
+      "fieldtype": "Date",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "received_amount",
+      "label": "已核销金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "outstanding_amount",
+      "label": "计划未收金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "收款计划状态",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "cancelled",
+      "label": "来源已取消",
+      "fieldtype": "Check",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "allocation_policy",
+      "label": "核销归属规则",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "default": "同应收发票按开票日期、税票号、计划号顺序分配，仅展示、不重复记账"
+    }
+  ],
+  "autoname": "field:source_key",
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 1,
+      "create": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 0,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

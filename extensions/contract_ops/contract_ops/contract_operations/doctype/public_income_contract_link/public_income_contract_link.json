@@ -1,0 +1,111 @@
+{
+  "doctype": "DocType",
+  "name": "Public Income Contract Link",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "track_changes": 1,
+  "allow_rename": 0,
+  "field_order": [
+    "income_project",
+    "sales_contract",
+    "status",
+    "valid_from",
+    "valid_to",
+    "previous_contract",
+    "evidence",
+    "relation_key"
+  ],
+  "fields": [
+    {
+      "fieldname": "income_project",
+      "label": "公益性收入项目",
+      "fieldtype": "Link",
+      "options": "Public Income Project",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sales_contract",
+      "label": "年度销售合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "reqd": 1,
+      "in_list_view": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "status",
+      "label": "关联状态",
+      "fieldtype": "Select",
+      "options": "待核实\n已确认\n已撤销",
+      "default": "待核实",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "valid_from",
+      "label": "合同生效日期",
+      "fieldtype": "Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "valid_to",
+      "label": "合同结束日期",
+      "fieldtype": "Date",
+      "read_only": 1
+    },
+    {
+      "fieldname": "previous_contract",
+      "label": "上一份续约合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "evidence",
+      "label": "关联依据及覆盖范围",
+      "fieldtype": "Small Text",
+      "description": "请说明合同对应本条目的设备、位置或范围；同名客户不足以确认归属。"
+    },
+    {
+      "fieldname": "relation_key",
+      "label": "关系唯一标识",
+      "fieldtype": "Data",
+      "unique": 1,
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC"
+}

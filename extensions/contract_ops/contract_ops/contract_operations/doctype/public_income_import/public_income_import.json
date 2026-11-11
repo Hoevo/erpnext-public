@@ -1,0 +1,136 @@
+{
+  "doctype": "DocType",
+  "name": "Public Income Import",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "track_changes": 1,
+  "allow_rename": 0,
+  "field_order": [
+    "source_filename",
+    "source_sha256",
+    "source_file",
+    "imported_at",
+    "project_count",
+    "community_count",
+    "known_annual_total",
+    "review_notes",
+    "source_gaps",
+    "model_definition",
+    "workbook_snapshot",
+    "original_b64"
+  ],
+  "fields": [
+    {
+      "fieldname": "source_filename",
+      "label": "原始文件名",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "source_sha256",
+      "label": "原文件SHA256",
+      "fieldtype": "Data",
+      "unique": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_file",
+      "label": "下载原始清单",
+      "fieldtype": "Attach",
+      "read_only": 1
+    },
+    {
+      "fieldname": "imported_at",
+      "label": "记录时间",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "project_count",
+      "label": "具体项目数",
+      "fieldtype": "Int",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "community_count",
+      "label": "原表小区数",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "known_annual_total",
+      "label": "已知年参考金额合计（元）",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "review_notes",
+      "label": "口径与差异说明",
+      "fieldtype": "Long Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_gaps",
+      "label": "原表缺项记录",
+      "fieldtype": "Code",
+      "options": "JSON",
+      "read_only": 1
+    },
+    {
+      "fieldname": "model_definition",
+      "label": "数据库模型定义",
+      "fieldtype": "Code",
+      "options": "JSON",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "workbook_snapshot",
+      "label": "全工作簿来源快照",
+      "fieldtype": "Long Text",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "original_b64",
+      "label": "原文件字节（Base64）",
+      "fieldtype": "Long Text",
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC"
+}

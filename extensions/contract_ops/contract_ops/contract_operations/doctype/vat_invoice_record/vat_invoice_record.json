@@ -1,0 +1,231 @@
+{
+  "doctype": "DocType",
+  "name": "VAT Invoice Record",
+  "module": "Contract Operations",
+  "autoname": "naming_series:",
+  "engine": "InnoDB",
+  "is_submittable": 1,
+  "track_changes": 1,
+  "allow_rename": 0,
+  "field_order": [
+    "naming_series",
+    "sales_contract",
+    "contract_group",
+    "company",
+    "customer",
+    "currency",
+    "invoice_number",
+    "invoice_date",
+    "gross_amount",
+    "tax_amount",
+    "sales_invoice",
+    "invoice_file",
+    "notes",
+    "amended_from",
+    "planning_section",
+    "plan_allocations",
+    "invoice_allocations",
+    "payment_source_section",
+    "payment_allocations",
+    "relationship_section",
+    "relationship_html"
+  ],
+  "fields": [
+    {
+      "fieldname": "naming_series",
+      "label": "编号规则",
+      "fieldtype": "Select",
+      "options": "VAT-.YYYY.-.#####",
+      "default": "VAT-.YYYY.-.#####",
+      "reqd": 1
+    },
+    {
+      "fieldname": "sales_contract",
+      "label": "销售合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "allow_on_submit": 1,
+      "in_list_view": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "contract_group",
+      "label": "合同组（跨协议税票）",
+      "fieldtype": "Link",
+      "options": "Contract Group",
+      "allow_on_submit": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "company",
+      "label": "公司",
+      "fieldtype": "Link",
+      "options": "Company",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "customer",
+      "label": "客户",
+      "fieldtype": "Link",
+      "options": "Customer",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "default": "CNY",
+      "reqd": 1
+    },
+    {
+      "fieldname": "invoice_number",
+      "label": "外部税票号码",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "invoice_date",
+      "label": "开票日期",
+      "fieldtype": "Date",
+      "default": "Today",
+      "reqd": 1
+    },
+    {
+      "fieldname": "gross_amount",
+      "label": "价税合计",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "tax_amount",
+      "label": "税额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "sales_invoice",
+      "label": "关联应收发票",
+      "fieldtype": "Link",
+      "options": "Sales Invoice"
+    },
+    {
+      "fieldname": "invoice_file",
+      "label": "发票附件",
+      "fieldtype": "Attach"
+    },
+    {
+      "fieldname": "notes",
+      "label": "备注",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "amended_from",
+      "label": "修订自",
+      "fieldtype": "Link",
+      "options": "VAT Invoice Record",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "planning_section",
+      "label": "开票计划分配",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "plan_allocations",
+      "label": "关联期次及金额",
+      "fieldtype": "Table",
+      "options": "VAT Plan Allocation",
+      "allow_on_submit": 1,
+      "description": "有开票计划时需分配全部价税合计；一张税票可关联多个期次。未设置计划的历史业务保持原流程。"
+    },
+    {
+      "fieldname": "invoice_allocations",
+      "label": "税票对应应收分配",
+      "fieldtype": "Table",
+      "options": "VAT Invoice Allocation",
+      "allow_on_submit": 1,
+      "description": "历史或合并税票按实际金额关联应收；合计必须等于税票金额。"
+    },
+    {
+      "fieldname": "payment_source_section",
+      "label": "本张税票的付款来源",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "payment_allocations",
+      "label": "先款后票资金分配",
+      "fieldtype": "Table",
+      "options": "VAT Payment Allocation",
+      "read_only": 1,
+      "description": "提交前按所选开票期次的真实资金依据生成；同一张税票可对应多笔付款，不重复记账。"
+    },
+    {
+      "fieldname": "relationship_section",
+      "label": "合同、应收与付款追溯",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "relationship_html",
+      "label": "单据关联明细",
+      "fieldtype": "HTML"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Sales Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
+    },
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "email": 1,
+      "share": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "links": [],
+  "actions": [],
+  "states": []
+}

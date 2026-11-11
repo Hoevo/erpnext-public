@@ -1,0 +1,75 @@
+{
+  "doctype": "Sidebar",
+  "name": "Contract Operations",
+  "title": "Contract Operations",
+  "module": "Contract Operations",
+  "app": "contract_ops",
+  "standard": 1,
+  "header_icon": "file-text",
+  "items": [
+    {
+      "type": "Link",
+      "label": "合同组",
+      "link_type": "DocType",
+      "link_to": "Contract Group",
+      "icon": "folder"
+    },
+    {
+      "type": "Link",
+      "label": "销售合同",
+      "link_type": "DocType",
+      "link_to": "Contract",
+      "icon": "file-text",
+      "filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "type": "Link",
+      "label": "续签与到期跟进",
+      "link_type": "DocType",
+      "link_to": "Contract Renewal Cycle",
+      "icon": "calendar"
+    },
+    {
+      "type": "Link",
+      "label": "开票计划",
+      "link_type": "DocType",
+      "link_to": "Contract Billing Plan",
+      "icon": "calendar"
+    },
+    {
+      "type": "Link",
+      "label": "收款计划",
+      "link_type": "DocType",
+      "link_to": "Contract Receipt Plan",
+      "icon": "calendar"
+    },
+    {
+      "type": "Link",
+      "label": "先款后票收款计划",
+      "link_type": "DocType",
+      "link_to": "Contract Collection Plan",
+      "icon": "calendar"
+    },
+    {
+      "type": "Link",
+      "label": "税票登记",
+      "link_type": "DocType",
+      "link_to": "VAT Invoice Record",
+      "icon": "receipt"
+    },
+    {
+      "type": "Link",
+      "label": "应收发票",
+      "link_type": "DocType",
+      "link_to": "Sales Invoice",
+      "icon": "file"
+    },
+    {
+      "type": "Link",
+      "label": "收款与核销",
+      "link_type": "DocType",
+      "link_to": "Payment Entry",
+      "icon": "credit-card"
+    }
+  ]
+}

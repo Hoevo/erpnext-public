@@ -1,0 +1,54 @@
+{
+  "doctype": "DocType",
+  "name": "Contract Funding Evidence",
+  "module": "Contract Operations",
+  "engine": "InnoDB",
+  "field_order": [
+    "source_payment",
+    "allocation_row",
+    "actual_receipt_date",
+    "funded_amount",
+    "currency"
+  ],
+  "fields": [
+    {
+      "fieldname": "source_payment",
+      "label": "来源收款单",
+      "fieldtype": "Link",
+      "options": "Payment Entry",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "allocation_row",
+      "label": "来源分配行",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "actual_receipt_date",
+      "label": "实际到账日期",
+      "fieldtype": "Date",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "funded_amount",
+      "label": "本期开票资金依据",
+      "fieldtype": "Currency",
+      "read_only": 1,
+      "in_list_view": 1,
+      "options": "currency"
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "istable": 1,
+  "permissions": []
+}

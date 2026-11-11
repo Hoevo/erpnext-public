@@ -1,0 +1,74 @@
+{
+  "doctype": "DocType",
+  "name": "VAT Payment Allocation",
+  "module": "Contract Operations",
+  "istable": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "sales_contract",
+    "billing_plan",
+    "payment_entry",
+    "sales_invoice",
+    "actual_receipt_date",
+    "allocated_amount",
+    "currency"
+  ],
+  "fields": [
+    {
+      "fieldname": "sales_contract",
+      "label": "对应销售合同",
+      "fieldtype": "Link",
+      "options": "Contract",
+      "read_only": 1,
+      "in_list_view": 1,
+      "link_filters": "[[\"Contract\", \"party_type\", \"=\", \"Customer\"], [\"Contract\", \"contract_ops_enabled\", \"=\", 1]]"
+    },
+    {
+      "fieldname": "billing_plan",
+      "label": "对应开票期次",
+      "fieldtype": "Link",
+      "options": "Contract Billing Plan",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "payment_entry",
+      "label": "来源收款单",
+      "fieldtype": "Link",
+      "options": "Payment Entry",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sales_invoice",
+      "label": "对应应收发票",
+      "fieldtype": "Link",
+      "options": "Sales Invoice",
+      "read_only": 1
+    },
+    {
+      "fieldname": "actual_receipt_date",
+      "label": "银行实际到账日",
+      "fieldtype": "Date",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "allocated_amount",
+      "label": "本票使用金额",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "currency",
+      "label": "币种",
+      "fieldtype": "Link",
+      "options": "Currency",
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "permissions": []
+}

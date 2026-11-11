@@ -1,0 +1,7 @@
+* text=auto
+extensions/**/*.py text eol=lf
+extensions/**/*.js text eol=lf
+extensions/**/*.json text eol=lf
+extensions/**/*.sh text eol=lf
+extensions/**/*.toml text eol=lf
+extensions/**/Dockerfile text eol=lf
