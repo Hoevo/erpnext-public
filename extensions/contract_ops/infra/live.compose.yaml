@@ -1,0 +1,64 @@
+name: erpnext-v17
+configs:
+  native_nginx_template:
+    file: ./frappe.conf.template
+x-app: &app
+  image: erpnext-contract-ops:v17-check
+  cpus: 1.0
+  restart: unless-stopped
+  volumes:
+    - ${OPENCLAW_DB_PATH:?Set isolated data root}/sites:/home/frappe/frappe-bench/sites
+    - ${OPENCLAW_DB_PATH:?Set isolated data root}/logs:/home/frappe/frappe-bench/logs
+    - ${OPENCLAW_DB_PATH:?Set isolated data root}/restore:/restore:ro
+    - ..:/home/frappe/frappe-bench/apps/contract_ops:ro
+services:
+  db:
+    image: mariadb:11.8
+    cpus: 0.5
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set isolated DB password}
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci', '--skip-character-set-client-handshake', '--innodb-snapshot-isolation=OFF']
+    volumes:
+      - ${OPENCLAW_DB_PATH}/mariadb:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  cache:
+    image: redis:8.6-alpine
+    cpus: 0.25
+    restart: unless-stopped
+  queue:
+    image: redis:8.6-alpine
+    cpus: 0.25
+    restart: unless-stopped
+  backend:
+    <<: *app
+    environment:
+      GUNICORN_WORKERS: 1
+      GUNICORN_THREADS: 2
+  realtime:
+    <<: *app
+    command: ['env/bin/python', '-m', 'frappe.realtime.server']
+  frontend:
+    <<: *app
+    command: ['nginx-entrypoint.sh']
+    configs:
+      - source: native_nginx_template
+        target: /templates/nginx/frappe.conf.template
+    environment:
+      BACKEND: backend:8000
+      SOCKETIO: realtime:9000
+      FRAPPE_SITE_NAME_HEADER: erp17.localhost
+      NGINX_LISTEN_PORT: 8080
+    ports:
+      - '127.0.0.1:8261:8080'
+    depends_on: [backend, realtime]
+  worker:
+    <<: *app
+    command: [bench, worker, --queue, 'short,default,long']
+  scheduler:
+    <<: *app
+    command: [bench, schedule]
